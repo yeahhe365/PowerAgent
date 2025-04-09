@@ -1,243 +1,39 @@
 # ========================================
 # 文件名: PowerAgent/gui/main_window.py
-# -----------------------------------------------------------------------
+# ---------------------------------------
 # gui/main_window.py
 # -*- coding: utf-8 -*-
 
 import sys
 import os
 import json
-import platform # 仍然需要 platform 来检查 Windows 环境 (用于其他地方)
+import platform
 import re
+import time
 from collections import deque
 
 from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QTextEdit, QLineEdit, QPushButton, QSplitter, QLabel, QDialog, QApplication, QFrame,
-    QSpacerItem, QSizePolicy, QStatusBar, QToolBar, QCompleter # Keep QCompleter import for now if you plan to add it elsewhere
+    QMainWindow, QWidget, QSplitter,
+    QDialog, QApplication, QFrame, QLineEdit, QTextEdit,
+    QMessageBox, QLabel, QPushButton # QPushButton 已在导入列表中
 )
-from PySide6.QtCore import Qt, Slot, QSettings, QCoreApplication, QStandardPaths, QSize, QStringListModel, QEvent
+from PySide6.QtCore import Qt, Slot, QSettings, QCoreApplication, QStandardPaths, QSize, QStringListModel, QEvent, QTimer,QThread
 from PySide6.QtGui import (
     QTextCursor, QPalette, QFont, QIcon, QColor,
-    QAction, QKeySequence, QTextCharFormat
+    QAction, QKeySequence, QTextCharFormat, QClipboard
 )
 
-
-# Import from other modules
+# Import from other project modules
 from constants import APP_NAME, get_color
-from core import config # <<< Needs access to config
-from core.workers import ApiWorkerThread, ManualCommandThread
+from core import config # Now includes CLI context AND timestamp settings (modified)
+from core.workers import ApiWorkerThread, ManualCommandThread, _decode_output
 from .settings_dialog import SettingsDialog
 from .palette import setup_palette
-# Import the helper function for decoding subprocess output
-from core.workers import _decode_output
+from .ui_components import create_ui_elements, StatusIndicatorWidget
+from .stylesheets import STYLESHEET_TEMPLATE, MINIMAL_STYLESHEET_SYSTEM_THEME
 
-# Stylesheet template (Re-added CliPromptLabel styling)
-STYLESHEET_TEMPLATE = """
-    /* General */
-    QMainWindow {{ }}
-    QWidget {{
-        color: {text_main};
-    }}
-    QToolBar {{
-        border: none;
-        padding: 2px;
-        spacing: 5px;
-    }}
-    /* Toolbar Labels */
-    QToolBar QLabel#ToolbarCwdLabel,
-    QToolBar QLabel#ModelIdLabel,
-    QToolBar QLabel#ModeLabel {{
-        padding: 0px 5px; /* Same padding for all */
-        font-size: 9pt;
-        color: {status_label_color};
-    }}
-    /* Specific Toolbar CWD Label color */
-    QToolBar QLabel#ToolbarCwdLabel {{
-        color: {cwd_label_color};
-    }}
-    /* Separator Styling */
-    QToolBar QFrame {{
-        margin-left: 3px;
-        margin-right: 3px;
-    }}
-    /* Settings Button Padding */
-    QToolBar QToolButton {{
-        padding-left: 3px;
-        padding-right: 5px;
-        padding-top: 2px;
-        padding-bottom: 2px;
-    }}
-    /* Status indicator styling is done directly in the code */
-
-    QStatusBar {{
-        border-top: 1px solid {border};
-    }}
-
-    /* CLI Area Specifics */
-    #CliOutput {{
-        background-color: {cli_bg};
-        color: {cli_output};
-        border: 1px solid {border};
-        padding: 3px;
-        font-family: {mono_font_family};
-        font-size: {mono_font_size}pt;
-    }}
-    #CliInput {{
-        background-color: {cli_bg};
-        color: {cli_output};
-        border: none; /* Input field has no border itself */
-        padding: 4px;
-        font-family: {mono_font_family};
-        font-size: {mono_font_size}pt;
-    }}
-    #CliInputContainer {{
-       border: 1px solid {border};
-       background-color: {cli_bg};
-       border-radius: 3px;
-       /* Container provides the border for the input */
-    }}
-    #CliInputContainer:focus-within {{
-        border: 1px solid {highlight_bg};
-    }}
-    /* Styling for the Prompt Label inside the container */
-    #CliPromptLabel {{
-        color: {prompt_color}; /* Use the prompt color */
-        padding: 4px 0px 4px 5px; /* Top/Bottom/Left padding like input, NO right padding */
-        margin-right: 0px; /* No margin between label and input */
-        background-color: {cli_bg}; /* Match container background */
-        font-family: {mono_font_family};
-        font-size: {mono_font_size}pt;
-        font-weight: bold; /* Make prompt stand out slightly */
-    }}
-
-    /* Chat Area Specifics */
-    #ChatHistoryDisplay {{
-        border: 1px solid {border};
-        padding: 3px;
-    }}
-     #ChatInput {{
-        border: 1px solid {border};
-        padding: 4px;
-        border-radius: 3px;
-    }}
-    #ChatInput:focus {{
-         border: 1px solid {highlight_bg};
-    }}
-
-    /* Other Widgets */
-    QPushButton {{
-        padding: 5px 10px;
-        border-radius: 3px;
-        min-height: 26px;
-        background-color: {button_bg};
-        color: {button_text};
-        border: 1px solid {border};
-    }}
-    QPushButton:hover {{
-        background-color: {highlight_bg};
-        color: {highlighted_text};
-        border: 1px solid {highlight_bg};
-    }}
-    QPushButton:pressed {{
-        background-color: {button_pressed_bg};
-    }}
-    QPushButton:disabled {{
-        background-color: {button_disabled_bg};
-        color: {text_disabled};
-        border: 1px solid {border_disabled};
-        padding: 5px 10px;
-        min-height: 26px;
-    }}
-    QLabel#StatusLabel {{
-        color: {status_label_color};
-        font-size: {label_font_size}pt;
-        margin-left: 5px;
-    }}
-    QSplitter::handle {{
-        background-color: transparent;
-        border: none;
-    }}
-    QSplitter::handle:horizontal {{
-        width: 5px;
-        margin: 0 1px;
-    }}
-    QSplitter::handle:vertical {{
-        height: 5px;
-        margin: 1px 0;
-    }}
-    QSplitter::handle:pressed {{
-         background-color: {highlight_bg};
-    }}
-    QToolTip {{
-        border: 1px solid {border};
-        padding: 3px;
-        background-color: {tooltip_bg};
-        color: {tooltip_text};
-    }}
-    #ClearChatButton {{ }}
-    #ClearChatButton:hover {{ }}
-"""
-
-# Minimal stylesheet (Re-added CliPromptLabel font styling)
-MINIMAL_STYLESHEET_SYSTEM_THEME = """
-    #CliOutput, #CliInput, #CliPromptLabel {{
-        font-family: {mono_font_family};
-        font-size: {mono_font_size}pt;
-    }}
-    #CliInputContainer {{
-       border: 1px solid {border};
-       border-radius: 3px;
-    }}
-    #CliInput {{
-        border: none;
-        padding: 4px;
-    }}
-     #CliOutput {{
-        border: 1px solid {border};
-        padding: 3px;
-    }}
-     #ChatHistoryDisplay {{
-        border: 1px solid {border};
-        padding: 3px;
-    }}
-     #ChatInput {{
-        border: 1px solid {border};
-        padding: 4px;
-        border-radius: 3px;
-    }}
-    QSplitter::handle {{ }}
-     QToolTip {{
-        border: 1px solid {border};
-        padding: 3px;
-     }}
-    /* Toolbar Labels */
-    QToolBar QLabel#ToolbarCwdLabel,
-    QToolBar QLabel#ModelIdLabel,
-    QToolBar QLabel#ModeLabel {{
-        padding: 0px 5px;
-        font-size: 9pt;
-    }}
-    /* Separator Styling */
-    QToolBar QFrame {{
-        margin-left: 3px;
-        margin-right: 3px;
-    }}
-    QToolBar QToolButton {{
-        padding-left: 3px;
-        padding-right: 5px;
-        padding-top: 2px;
-        padding-bottom: 2px;
-    }}
-    QPushButton {{
-        padding: 5px 10px;
-        min-height: 26px;
-    }}
-    QPushButton:disabled {{
-        padding: 5px 10px;
-        min-height: 26px;
-    }}
-"""
+# Keep imports for types used in method signatures, event filters, or direct manipulation.
+# QFrame is still needed for separators.
 
 
 class MainWindow(QMainWindow):
@@ -245,7 +41,7 @@ class MainWindow(QMainWindow):
     def __init__(self, application_base_dir=None, parent=None):
         super().__init__(parent)
 
-        # Determine Application Base Directory
+        # Determine Application Base Directory (same logic)
         if application_base_dir: self.application_base_dir = application_base_dir
         elif getattr(sys, 'frozen', False): self.application_base_dir = os.path.dirname(sys.executable)
         else:
@@ -258,54 +54,73 @@ class MainWindow(QMainWindow):
         self.current_directory = self.initial_directory
 
         # Initialize State Variables
-        self.conversation_history = deque(maxlen=50)
-        self.current_mode = "suggest"
+        self.conversation_history = deque(maxlen=50) # Chat history for display AND API
         self.api_worker_thread = None
         self.manual_cmd_thread = None
         self.settings_dialog_open = False
-        self.cli_command_history = deque(maxlen=100)
+        self.cli_command_history = deque(maxlen=100) # Only for CLI input history
         self.cli_history_index = -1
-        self.toolbar_cwd_label = None; self.model_id_label = None
-        self.mode_label = None; self.status_indicator = None
-        self.cli_prompt_label = None # Instance variable for the prompt label
+        self._closing = False
 
-        # Load state AFTER setting initial CWD
+        # --- Initialize UI Element Placeholders ---
+        self.toolbar_cwd_label = None; self.model_id_label = None
+        self.status_indicator: StatusIndicatorWidget = None
+        self.cli_prompt_label = None
+        self.cli_output_display = None; self.cli_input = None
+        self.chat_history_display = None; self.chat_input = None
+        self.send_button = None; self.clear_chat_button = None
+        self.clear_cli_button = None # <<< ADDED: Placeholder for the new button >>>
+        self.splitter = None
+        self.status_bar = None
+        # --- End UI Element Placeholders ---
+
+        # Load state AFTER setting initial CWD (same logic)
         try:
-            self.load_state() # Tries to load saved CWD, history, etc.
+            self.load_state()
             if os.path.isdir(self.current_directory):
-                os.chdir(self.current_directory) # <<< Set initial process CWD here <<<
+                os.chdir(self.current_directory)
                 print(f"Successfully set initial process working directory to: {self.current_directory}")
             else:
                 print(f"Warning: Current directory '{self.current_directory}' (loaded or initial) not found. Falling back to CWD.")
                 self.current_directory = os.getcwd()
-                os.chdir(self.current_directory) # <<< Set process CWD to fallback <<<
+                os.chdir(self.current_directory)
                 print(f"Using current working directory as fallback: {self.current_directory}")
         except Exception as e:
             print(f"Warning: Could not change process directory to '{self.current_directory}': {e}")
-            self.current_directory = os.getcwd() # Last resort
-            try:
-                os.chdir(self.current_directory) # <<< Try setting process CWD to last resort <<<
-            except Exception as e2:
-                 print(f"CRITICAL: Could not set process directory even to fallback '{self.current_directory}': {e2}")
+            self.current_directory = os.getcwd()
+            try: os.chdir(self.current_directory)
+            except Exception as e2: print(f"CRITICAL: Could not set process directory even to fallback '{self.current_directory}': {e2}")
             print(f"Using fallback process working directory: {self.current_directory}")
-
 
         # Basic Window Setup
         self.setWindowTitle(APP_NAME)
         self.setGeometry(100, 100, 850, 585)
         self.set_window_icon()
 
-        # Setup UI Elements
-        self.setup_ui()
+        # Setup UI Elements using the external function
+        self.setup_ui() # UI must be set up before load_and_apply_state
+
+        # --- Restore Splitter State ---
+        try:
+            settings = config.get_settings()
+            splitter_state = settings.value("ui/splitter_state")
+            if self.splitter and splitter_state and isinstance(splitter_state, (bytes, bytearray)):
+                self.splitter.restoreState(splitter_state)
+                print("Restored splitter state from settings.")
+            elif self.splitter:
+                 print("Set default splitter sizes (55%/45%) during UI creation.")
+            else:
+                 print("Warning: Splitter object not found after UI setup.")
+        except Exception as e:
+            print(f"Could not restore or verify splitter sizes: {e}")
 
         # Post-UI Setup
         self.apply_theme_specific_styles() # Applies theme + initial styles
         self.load_and_apply_state() # Applies loaded history to display
 
-        # Set initial mode and status display
-        self.update_mode_display()
-        self.update_status_indicator(False) # Start idle
-        self.update_model_id_display() # Ensure model ID shown initially
+        # Set initial status display
+        self.update_status_indicator(False)
+        self.update_model_id_display()
 
         # Add welcome message
         if not self.conversation_history:
@@ -314,26 +129,31 @@ class MainWindow(QMainWindow):
         else:
              print("[MainWindow] Skipping initial welcome message as history was loaded.")
 
-
         # Update CWD label (toolbar) and CLI prompt
-        self.update_cwd_label() # Updates toolbar CWD label
-        self.update_prompt()    # Updates CLI prompt
-        self.cli_input.setFocus()
+        self.update_cwd_label()
+        self.update_prompt()
+        if self.cli_input:
+            self.cli_input.setFocus()
+
+    def setup_ui(self):
+        """Creates and arranges all UI widgets by calling the external setup function."""
+        create_ui_elements(self)
 
     def eventFilter(self, watched, event):
-        # Handles Shift+Enter in chat input
+        # Handles Shift+Enter in chat input (same logic)
         if watched == self.chat_input and event.type() == QEvent.Type.KeyPress:
             key = event.key(); modifiers = event.modifiers()
             if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                 if not (modifiers & Qt.KeyboardModifier.ShiftModifier):
                     self.handle_send_message()
-                    return True # Prevent default newline insertion
+                    return True
                 else:
-                    pass # Allow default behavior (newline) for Shift+Enter
+                    # Allow default behavior (insert newline)
+                    pass
         return super().eventFilter(watched, event)
 
     def _get_icon(self, theme_name: str, fallback_filename: str, text_fallback: str = None) -> QIcon:
-        # Helper to get themed icons or fallbacks
+        # Helper to get themed icons or fallbacks (same logic)
         icon = QIcon.fromTheme(theme_name)
         if icon.isNull():
             assets_dir = os.path.join(self.application_base_dir, "assets"); icon_path = os.path.join(assets_dir, fallback_filename)
@@ -342,103 +162,37 @@ class MainWindow(QMainWindow):
         return icon
 
     def set_window_icon(self):
-        # Sets the main application window icon
+        # Sets the main application window icon (same logic)
         try:
-            icon = self._get_icon(APP_NAME.lower(), "icon.png", None) # Try app name first
-            if icon.isNull(): icon = self._get_icon("utilities-terminal", "app.ico", None) # Generic terminal icon as fallback
+            icon = self._get_icon(APP_NAME.lower(), "icon.png", None)
+            if icon.isNull(): icon = self._get_icon("utilities-terminal", "app.ico", None)
             if not icon.isNull(): self.setWindowIcon(icon)
             else: print("Could not find a suitable window icon via theme or fallback.")
         except Exception as e: print(f"Error setting window icon: {e}")
 
-    def setup_ui(self):
-        """Creates and arranges all UI widgets."""
-        central_widget = QWidget(); self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget); main_layout.setContentsMargins(5, 5, 5, 5); main_layout.setSpacing(5)
-
-        # --- Toolbar Setup ---
-        toolbar = self.addToolBar("Main Toolbar"); toolbar.setObjectName("MainToolBar"); toolbar.setMovable(False); toolbar.setIconSize(QSize(16, 16)); toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        settings_icon = self._get_icon("preferences-system", "settings.png", "⚙️"); settings_action = QAction(settings_icon, "设置", self); settings_action.setToolTip("配置 API、主题、自动启动及其他设置"); settings_action.triggered.connect(self.open_settings_dialog); toolbar.addAction(settings_action)
-        spacer = QWidget(); spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred); toolbar.addWidget(spacer)
-        self.toolbar_cwd_label = QLabel("..."); self.toolbar_cwd_label.setObjectName("ToolbarCwdLabel"); self.toolbar_cwd_label.setToolTip("当前工作目录"); toolbar.addWidget(self.toolbar_cwd_label)
-        cwd_separator = QFrame(); cwd_separator.setFrameShape(QFrame.Shape.VLine); cwd_separator.setFrameShadow(QFrame.Shadow.Sunken); toolbar.addWidget(cwd_separator)
-        self.model_id_label = QLabel(f"模型: {config.MODEL_ID or '未配置'}"); self.model_id_label.setObjectName("ModelIdLabel"); self.model_id_label.setToolTip(f"当前使用的 AI 模型 ID: {config.MODEL_ID or '未配置'}"); toolbar.addWidget(self.model_id_label)
-        model_separator = QFrame(); model_separator.setFrameShape(QFrame.Shape.VLine); model_separator.setFrameShadow(QFrame.Shadow.Sunken); toolbar.addWidget(model_separator)
-        self.mode_label = QLabel(f"模式: {self.current_mode}"); self.mode_label.setObjectName("ModeLabel"); self.mode_label.setToolTip("当前的 AI 命令模式"); toolbar.addWidget(self.mode_label)
-        # Status Indicator Label (styled in update_status_indicator)
-        self.status_indicator = QLabel(); self.status_indicator.setObjectName("StatusIndicator"); self.status_indicator.setFixedSize(16, 16); self.status_indicator.setToolTip("状态: 空闲"); toolbar.addWidget(self.status_indicator)
-
-        # --- Splitter Setup ---
-        splitter = QSplitter(Qt.Orientation.Horizontal); splitter.setObjectName("MainSplitter"); main_layout.addWidget(splitter, 1)
-
-        # --- Left Pane (CLI) ---
-        left_widget = QWidget(); left_layout = QVBoxLayout(left_widget); left_layout.setContentsMargins(0, 0, 5, 0); left_layout.setSpacing(3)
-        self.cli_output_display = QTextEdit(); self.cli_output_display.setObjectName("CliOutput"); self.cli_output_display.setReadOnly(True); self.cli_output_display.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-
-        # Container for CLI Prompt Label and Input LineEdit
-        cli_input_container = QWidget(); cli_input_container.setObjectName("CliInputContainer"); cli_input_layout = QHBoxLayout(cli_input_container); cli_input_layout.setContentsMargins(0, 0, 0, 0); cli_input_layout.setSpacing(0) # No space between prompt and input
-        # Create the prompt label instance
-        self.cli_prompt_label = QLabel("PS>"); self.cli_prompt_label.setObjectName("CliPromptLabel") # Default prompt
-        self.cli_input = QLineEdit(); self.cli_input.setObjectName("CliInput"); self.cli_input.setPlaceholderText("输入 Shell 命令 (↑/↓ 历史)..."); self.cli_input.returnPressed.connect(self.handle_manual_command)
-        # Add the prompt label *before* the input field
-        cli_input_layout.addWidget(self.cli_prompt_label)
-        cli_input_layout.addWidget(self.cli_input, 1) # Input field takes remaining space
-
-        left_layout.addWidget(self.cli_output_display, 1); left_layout.addWidget(cli_input_container); splitter.addWidget(left_widget)
-
-        # --- Right Pane (Chat) ---
-        right_widget = QWidget(); right_layout = QVBoxLayout(right_widget); right_layout.setContentsMargins(5, 0, 0, 0); right_layout.setSpacing(3)
-        self.chat_history_display = QTextEdit(); self.chat_history_display.setObjectName("ChatHistoryDisplay"); self.chat_history_display.setReadOnly(True); self.chat_history_display.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-        self.chat_input = QTextEdit(); self.chat_input.setObjectName("ChatInput"); self.chat_input.setPlaceholderText("询问 AI 或输入 /help... (Shift+Enter 换行)"); self.chat_input.setMaximumHeight(80); self.chat_input.setAcceptRichText(False); self.chat_input.installEventFilter(self)
-        button_layout = QHBoxLayout(); button_layout.setContentsMargins(0, 0, 0, 0); button_layout.setSpacing(5)
-        self.send_button = QPushButton("发送"); self.send_button.setToolTip("发送消息给 AI (Enter)"); self.send_button.clicked.connect(self.handle_send_message); self.send_button.setIconSize(QSize(16, 16)); send_icon = self._get_icon("mail-send", "send.png", None); self.send_button.setIcon(send_icon if not send_icon.isNull() else QIcon())
-        button_layout.addWidget(self.send_button)
-        self.clear_chat_button = QPushButton("清除聊天"); self.clear_chat_button.setObjectName("ClearChatButton"); self.clear_chat_button.setToolTip("清除聊天显示和历史记录"); self.clear_chat_button.setIconSize(QSize(16, 16)); clear_icon = self._get_icon("edit-clear", "clear.png", None); clear_icon = clear_icon if not clear_icon.isNull() else self._get_icon("user-trash", "trash.png", "🗑️"); self.clear_chat_button.setIcon(clear_icon if not clear_icon.isNull() else QIcon()); self.clear_chat_button.clicked.connect(self.handle_clear_chat)
-        button_layout.addWidget(self.clear_chat_button)
-        right_layout.addWidget(self.chat_history_display, 1); right_layout.addWidget(self.chat_input); right_layout.addLayout(button_layout); splitter.addWidget(right_widget)
-
-        # --- Slash Command Completer ---
-        # (No changes needed here)
-        # ---
-
-
-        # --- Initial Splitter Sizes ---
-        try:
-            settings = config.get_settings(); splitter_state = settings.value("ui/splitter_state"); default_width = self.geometry().width()
-            if splitter_state and isinstance(splitter_state, (bytes, bytearray)): splitter.restoreState(splitter_state); print("Restored splitter state from settings.")
-            else: cli_width = int(default_width * 0.55); chat_width = default_width - cli_width; splitter.setSizes([cli_width, chat_width]); print("Set default splitter sizes (55%/45%).")
-        except Exception as e: print(f"Could not set initial splitter sizes: {e}"); default_width = 850; splitter.setSizes([int(default_width*0.55), int(default_width*0.45)])
-
-        # --- Status Bar ---
-        self.status_bar = self.statusBar(); self.status_bar.hide()
-
-
     # --- UI Update and Helper Methods ---
 
     def _get_os_fonts(self):
-        # Helper to get platform-specific monospace fonts
-        # Simplified for Windows-only assumption (but keeping the structure)
+        # Helper to get platform-specific monospace fonts (same logic)
         mono_font_family = "Consolas, Courier New"
         mono_font_size = 10
         label_font_size = 9
-        # Keep the platform check in case it's needed elsewhere or for future
-        if platform.system() == "Windows":
-            pass # Already set
-        elif platform.system() == "Darwin":
-            # This branch is technically unused if truly Windows-only
-            mono_font_family, mono_font_size, label_font_size = "Menlo", 11, 9
-        elif platform.system() == "Linux":
-             # This branch is technically unused if truly Windows-only
-            mono_font_family, mono_font_size, label_font_size = "Monospace", 10, 9
+        if platform.system() == "Windows": pass
+        elif platform.system() == "Darwin": mono_font_family, mono_font_size, label_font_size = "Menlo", 11, 9
+        elif platform.system() == "Linux": mono_font_family, mono_font_size, label_font_size = "Monospace", 10, 9
         return mono_font_family, mono_font_size, label_font_size
 
     def apply_theme_specific_styles(self):
         # Applies the QSS stylesheet based on the current theme
-        # (No changes needed here, platform check inside _get_os_fonts handles Windows)
+        if self._closing: return
         theme = config.APP_THEME
         print(f"Applying styles for theme: {theme}")
         mono_font_family, mono_font_size, label_font_size = self._get_os_fonts()
         qss = ""
-        palette = QApplication.instance().palette() # Get the current global palette
+        app_instance = QApplication.instance()
+        if not app_instance: print("Warning: QApplication instance not found during style application."); return
+
+        palette = app_instance.palette()
         border_color_role = QPalette.ColorRole.Mid; border_color = palette.color(border_color_role)
         if not border_color.isValid(): border_color = palette.color(QPalette.ColorRole.Dark)
         if not border_color.isValid(): border_color = QColor(180, 180, 180) # Fallback
@@ -451,18 +205,15 @@ class MainWindow(QMainWindow):
             )
             print("Applied system theme (minimal QSS). Relies on global palette.")
         else: # "dark" or "light"
-            # Get theme-specific colors from constants
             cli_bg=get_color("cli_bg", theme); cli_output_color=get_color("cli_output", theme); prompt_color=get_color("prompt", theme); border_color_const=get_color("border", theme)
             text_main_color=get_color("text_main", theme); status_label_color=get_color("status_label", theme); cwd_label_color=get_color("cwd_label", theme)
-            # Get palette colors for general UI elements
             window_bg=palette.color(QPalette.ColorRole.Window).name(); base_bg=palette.color(QPalette.ColorRole.Base).name(); highlight_bg=palette.color(QPalette.ColorRole.Highlight).name(); highlighted_text=palette.color(QPalette.ColorRole.HighlightedText).name()
             button_bg=palette.color(QPalette.ColorRole.Button).name(); button_text_color=palette.color(QPalette.ColorRole.ButtonText).name(); tooltip_bg=palette.color(QPalette.ColorRole.ToolTipBase).name(); tooltip_text=palette.color(QPalette.ColorRole.ToolTipText).name()
             text_disabled=palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text).name(); button_disabled_bg=palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Button).name()
             border_disabled=palette.color(QPalette.ColorGroup.Disabled, border_color_role).name(); button_pressed_bg=QColor(button_bg).darker(115).name()
-            # Format the full QSS template
             qss = STYLESHEET_TEMPLATE.format(
                 window_bg=window_bg, base_bg=base_bg, text_main=text_main_color.name(), cli_bg=cli_bg.name(), cli_output=cli_output_color.name(), prompt_color=prompt_color.name(),
-                cwd_label_color=cwd_label_color.name(), border=border_color_const.name(), highlight_bg=highlight_bg, splitter_handle_bg=button_bg,
+                cwd_label_color=cwd_label_color.name(), border=border_color_const.name(), highlight_bg=highlight_bg,
                 mono_font_family=mono_font_family, mono_font_size=mono_font_size, label_font_size=label_font_size, button_bg=button_bg, button_text=button_text_color,
                 highlighted_text=highlighted_text, button_pressed_bg=button_pressed_bg, button_disabled_bg=button_disabled_bg, text_disabled=text_disabled,
                 border_disabled=border_disabled, tooltip_bg=tooltip_bg, tooltip_text=tooltip_text, status_label_color=status_label_color.name()
@@ -470,696 +221,740 @@ class MainWindow(QMainWindow):
             print(f"Theme '{theme}' styles applied via full QSS.")
 
         self.setStyleSheet(qss)
-        self.update_status_indicator(self.is_busy()) # Refresh indicator style
-        self.update() # Force widget repaint
-        # Update dynamic labels that might depend on theme colors/fonts
-        self.update_cwd_label() # Ensure toolbar CWD updates
-        self.update_prompt()    # Ensure CLI prompt updates
+        self.update()
+        self.update_cwd_label()
+        self.update_prompt()
 
     def load_and_apply_state(self):
-        """Applies loaded history to the display. Called after load_state."""
-        # (No changes needed here)
+        # Applies loaded history to chat display
+        if self._closing: return
         print(f"Applying {len(self.conversation_history)} loaded history items to display...")
-        history_copy = list(self.conversation_history); self.chat_history_display.clear(); self.conversation_history.clear() # Clear display and internal before reapplying
-        for role, message in history_copy: self.add_chat_message(role, message, add_to_internal_history=True)
-        print("History applied to display and internal deque.")
-        # Ensure other UI elements reflect loaded state
-        self.update_mode_display()
-        self.update_model_id_display()
-        self.update_cwd_label() # Make sure CWD label reflects loaded CWD
-        self.update_prompt()    # Make sure prompt label reflects loaded CWD
+        history_copy = list(self.conversation_history)
 
+        if self.chat_history_display:
+            self.chat_history_display.clear()
+            self.conversation_history.clear() # Clear internal before re-adding
+            for role, message in history_copy:
+                self.add_chat_message(role, message, add_to_internal_history=True)
+            print("History applied to display and internal deque.")
+        else:
+            self.conversation_history = deque(history_copy, maxlen=self.conversation_history.maxlen)
+            print("Warning: Chat history display not found during state application. Internal history reloaded.")
+
+        self.update_model_id_display()
+        self.update_cwd_label()
+        self.update_prompt()
 
     def get_short_cwd(self, max_len=35):
-         # Shortens the CWD for display in the toolbar
-         # (No changes needed here, platform check handles Windows drive letter)
+         # (Same logic)
          display_cwd = self.current_directory
-         # Capitalize drive letter for display on Windows
          if platform.system() == "Windows" and len(display_cwd) >= 2 and display_cwd[1] == ':':
              display_cwd = display_cwd[0].upper() + display_cwd[1:]
-
          try:
              home_dir = os.path.expanduser("~")
-             # Also capitalize home_dir if it's on a drive letter for comparison
              home_dir_compare = home_dir
              if platform.system() == "Windows" and len(home_dir_compare) >= 2 and home_dir_compare[1] == ':':
                  home_dir_compare = home_dir_compare[0].upper() + home_dir_compare[1:]
-             # Compare the potentially capitalized display_cwd with the potentially capitalized home_dir_compare
              if display_cwd.startswith(home_dir_compare):
                  if display_cwd == home_dir_compare: display_cwd = "~"
-                 # Use original home_dir length for slicing
                  elif display_cwd.startswith(home_dir_compare + os.path.sep): display_cwd = "~" + display_cwd[len(home_dir):]
-
              if len(display_cwd) > max_len:
                  parts = display_cwd.split(os.path.sep); num_parts = len(parts)
                  is_windows_drive_root = platform.system() == "Windows" and len(parts) == 2 and parts[1] == '' and parts[0].endswith(':')
                  if not is_windows_drive_root and num_parts > 2:
                     first_part = parts[0] if parts[0] != "~" else "~"
-                    if not first_part and len(parts) > 1 and parts[1]: first_part = f"{os.path.sep}{parts[1]}" # Handle root paths like /usr
+                    if not first_part and len(parts) > 1 and parts[1]: first_part = f"{os.path.sep}{parts[1]}"
                     display_cwd_short = f"{first_part}{os.path.sep}...{os.path.sep}{parts[-1]}"
-                    # If still too long, try including the last two components
-                    if len(display_cwd_short) > max_len and num_parts > 3:
-                        display_cwd = f"{first_part}{os.path.sep}...{os.path.sep}{parts[-2]}{os.path.sep}{parts[-1]}"
+                    if len(display_cwd_short) > max_len and num_parts > 3: display_cwd = f"{first_part}{os.path.sep}...{os.path.sep}{parts[-2]}{os.path.sep}{parts[-1]}"
                     else: display_cwd = display_cwd_short
-             # Final hard truncate if still too long
              if len(display_cwd) > max_len: display_cwd = "..." + display_cwd[-(max_len-3):]
-         except Exception as e: print(f"Error shortening CWD: {e}"); # Use original on error
+         except Exception as e: print(f"Error shortening CWD: {e}")
          return display_cwd
 
     def update_cwd_label(self):
-        """Updates the CWD label in the toolbar."""
-        # (No changes needed here)
+        # (Same logic, already has check)
+        if self._closing: return
         if self.toolbar_cwd_label:
-            short_cwd = self.get_short_cwd(max_len=30); self.toolbar_cwd_label.setText(f"{short_cwd}")
-            # Tooltip still shows the original, potentially lowercase path
+            short_cwd = self.get_short_cwd(max_len=30)
+            self.toolbar_cwd_label.setText(f"{short_cwd}")
             self.toolbar_cwd_label.setToolTip(f"当前工作目录: {self.current_directory}")
-        self.update_prompt() # Also update CLI prompt when CWD changes
+        self.update_prompt()
 
     def update_prompt(self):
-        """Updates the CLI prompt label to include the current directory (with uppercase drive on Windows)."""
-        # (No changes needed here, platform check handles Windows prefix and drive letter)
-        if not self.cli_prompt_label:
-            return
-
-        shell_prefix = "PS" if platform.system() == "Windows" else "$" # Will be "PS"
+        # (Same logic, already has check)
+        if self._closing: return
+        if not self.cli_prompt_label: return
+        shell_prefix = "PS" if platform.system() == "Windows" else "$"
         display_path = self.current_directory
-
-        # Capitalize drive letter for display on Windows BEFORE replacing home
         if platform.system() == "Windows" and len(display_path) >= 2 and display_path[1] == ':':
             display_path = display_path[0].upper() + display_path[1:]
-
-        # Try to replace home directory with ~ for display
         try:
             home_dir = os.path.expanduser("~")
-            # Capitalize home_dir if it's on a drive for comparison
             home_dir_compare = home_dir
             if platform.system() == "Windows" and len(home_dir_compare) >= 2 and home_dir_compare[1] == ':':
                 home_dir_compare = home_dir_compare[0].upper() + home_dir_compare[1:]
-             # Compare the potentially capitalized display_path with the potentially capitalized home_dir_compare
             if display_path.startswith(home_dir_compare):
-                if display_path == home_dir_compare: display_path = "~" # Exactly home
-                 # Use original home_dir length for slicing
-                elif display_path.startswith(home_dir_compare + os.path.sep): display_path = "~" + display_path[len(home_dir):] # Replace prefix
-        except Exception as e: print(f"Error processing path for prompt display: {e}") # Use original on error
-
-        # Construct the final prompt text using the modified display_path
-        prompt_text = f"{shell_prefix} {display_path}> " # Add trailing space
+                if display_path == home_dir_compare: display_path = "~"
+                elif display_path.startswith(home_dir_compare + os.path.sep): display_path = "~" + display_path[len(home_dir):]
+        except Exception as e: print(f"Error processing path for prompt display: {e}")
+        prompt_text = f"{shell_prefix} {display_path}> "
         self.cli_prompt_label.setText(prompt_text)
-        # Tooltip *always* shows the full, original (potentially lowercase) path
         self.cli_prompt_label.setToolTip(f"当前工作目录: {self.current_directory}")
 
     def update_model_id_display(self):
-        """Updates the model ID label in the toolbar."""
-        # (No changes needed here)
+        # (Same logic, already has check)
+        if self._closing: return
         if self.model_id_label:
-            model_text = config.MODEL_ID or '未配置'; self.model_id_label.setText(f"模型: {model_text}")
+            model_text = config.MODEL_ID or '未配置'
+            self.model_id_label.setText(f"模型: {model_text}")
             self.model_id_label.setToolTip(f"当前使用的 AI 模型 ID: {model_text}")
 
-    def update_mode_display(self):
-        """Updates the mode label in the toolbar."""
-        # (No changes needed here)
-        if self.mode_label: self.mode_label.setText(f"模式: {self.current_mode}")
-
     def update_status_indicator(self, busy: bool):
-        """Updates the visual style and tooltip of the status indicator."""
-        # (No changes needed here)
-        if self.status_indicator:
-            border_color = get_color("border", config.APP_THEME).name()
-            # Use red when busy, green when idle
-            color = "red" if busy else "limegreen"
-            tooltip = f"状态: {'忙碌' if busy else '空闲'}"
-            # Apply stylesheet to make it a colored circle
-            self.status_indicator.setStyleSheet(
-                f"QLabel#StatusIndicator {{ "
-                f"border: 1px solid {border_color}; "
-                f"border-radius: 8px; " # Makes it circular (half of fixed size 16)
-                f"background-color: {color}; "
-                f"}}"
-            )
-            self.status_indicator.setToolTip(tooltip)
+        """Updates the custom status indicator widget's state."""
+        if self._closing or not self.status_indicator:
+            return
+        self.status_indicator.setBusy(busy)
 
     def is_busy(self) -> bool:
-        """Checks if any background worker thread is currently running."""
-        # (No changes needed here)
+        # (Same logic)
         api_running = self.api_worker_thread and self.api_worker_thread.isRunning()
         manual_running = self.manual_cmd_thread and self.manual_cmd_thread.isRunning()
         return api_running or manual_running
 
-    def add_formatted_text(self, target_widget: QTextEdit, text: str, color: QColor = None):
-        # Helper to add text with specific color to a QTextEdit
-        # (No changes needed here)
-        if not text: return
-        cursor = target_widget.textCursor(); at_end = cursor.atEnd(); cursor.movePosition(QTextCursor.MoveOperation.End)
-        char_format = QTextCharFormat(); current_theme = config.APP_THEME
-        # Apply color only if specified AND not using system theme (where palette handles it)
-        if color is not None and current_theme != "system": char_format.setForeground(color)
-        else: # Otherwise, use the widget's default text color from the palette
-            default_text_color = target_widget.palette().color(QPalette.ColorRole.Text); char_format.setForeground(default_text_color)
-        cursor.setCharFormat(char_format); cursor.insertText(text)
-        # Ensure scroll to bottom if cursor was at the end
-        if at_end:
-            scrollbar = target_widget.verticalScrollBar()
-            if scrollbar: QApplication.processEvents(); scrollbar.setValue(scrollbar.maximum()) # Process events before scrolling
-            target_widget.ensureCursorVisible()
-
     def add_chat_message(self, role: str, message: str, add_to_internal_history: bool = True):
-        # Adds a message to the chat display with role-based formatting
-        # (No changes needed here)
+        # Adds message to the chat display (right pane) AND internal history deque
+        if self._closing or not self.chat_history_display:
+            if add_to_internal_history: # Still add to internal if UI not available but requested
+                message_for_history = re.sub(r"\s*\([\u0041-\uFFFF]+:\s*[\d.]+\s*[\u0041-\uFFFF]+\)$", "", message).strip()
+                if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
+                    self.conversation_history.append((role, message_for_history))
+                    # print(f"Added to internal history only (UI skip): {role} - {len(message_for_history)} chars")
+            return
+
+        target_widget = self.chat_history_display
         role_lower = role.lower(); role_display = role.capitalize()
-        prefix_text = f"{role_display}: "; message_text = message.rstrip() + '\n' # Ensure single newline at end
-        target_widget = self.chat_history_display; cursor = target_widget.textCursor(); at_end = cursor.atEnd()
-        cursor.movePosition(QTextCursor.MoveOperation.End); target_widget.setTextCursor(cursor)
+        prefix_text = f"{role_display}: "; message_text = message.rstrip() + '\n'
 
-        current_theme = config.APP_THEME # Still get theme for potential use by other roles
-        char_format = QTextCharFormat()
-        default_text_color = target_widget.palette().color(QPalette.ColorRole.Text) # Get default from palette
+        try:
+            cursor = target_widget.textCursor(); at_end = cursor.atEnd()
+            cursor.movePosition(QTextCursor.MoveOperation.End); target_widget.setTextCursor(cursor)
+        except RuntimeError: print("Warning: Could not get/set text cursor."); return
 
-        # --- Role Coloring Logic ---
-        prefix_color = None
-        message_color = default_text_color # Default message color
+        current_theme = config.APP_THEME
+        char_format = QTextCharFormat(); default_text_color = target_widget.palette().color(QPalette.ColorRole.Text)
+        prefix_color = None; message_color = default_text_color
 
-        if role_lower == 'user':
-            prefix_color = get_color('user', current_theme)
-        elif role_lower == 'model':
-            prefix_color = get_color('model', current_theme)
-            message_color = get_color('model', current_theme)
+        if role_lower == 'user': prefix_color = get_color('user', current_theme)
+        elif role_lower == 'model': prefix_color = get_color('model', current_theme)
         elif role_lower in ['system', 'error', 'help', 'prompt']:
-            prefix_color = get_color(role_lower, current_theme)
-            message_color = prefix_color
-        else: # Fallback for unknown roles: Use system color
-            prefix_color = get_color('system', current_theme)
-            message_color = prefix_color
-        # --- End Role Coloring Logic ---
+            prefix_color = get_color(role_lower, current_theme); message_color = prefix_color
+        else: prefix_color = get_color('system', current_theme); message_color = prefix_color # Default to system color
 
         if not isinstance(prefix_color, QColor): prefix_color = default_text_color
         if not isinstance(message_color, QColor): message_color = default_text_color
 
-        # Apply Prefix Color
-        char_format.setForeground(prefix_color)
-        prefix_font = char_format.font(); prefix_font.setBold(True); char_format.setFont(prefix_font)
-        cursor.setCharFormat(char_format); cursor.insertText(prefix_text)
+        try:
+            char_format.setForeground(prefix_color); prefix_font = char_format.font(); prefix_font.setBold(True); char_format.setFont(prefix_font)
+            cursor.setCharFormat(char_format); cursor.insertText(prefix_text)
+            char_format.setForeground(message_color); message_font = char_format.font(); message_font.setBold(False); char_format.setFont(message_font)
+            cursor.setCharFormat(char_format); cursor.insertText(message_text)
+        except RuntimeError: print("Warning: Could not insert text."); return
 
-        # Apply Message Color (and reset font)
-        char_format.setForeground(message_color)
-        message_font = char_format.font(); message_font.setBold(False); char_format.setFont(message_font) # Reset bold
-        cursor.setCharFormat(char_format); cursor.insertText(message_text)
-
-        # Scroll to bottom if needed
-        if at_end:
-            scrollbar = target_widget.verticalScrollBar()
-            if scrollbar: QApplication.processEvents(); scrollbar.setValue(scrollbar.maximum())
-            target_widget.ensureCursorVisible()
-
-        # Add to internal history deque if requested
         if add_to_internal_history:
             message_for_history = re.sub(r"\s*\([\u0041-\uFFFF]+:\s*[\d.]+\s*[\u0041-\uFFFF]+\)$", "", message).strip()
+            # Check if the message (role + content) is already the last one to avoid duplicates
             if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
                 self.conversation_history.append((role, message_for_history))
+                # print(f"Added to internal history: {role} - {len(message_for_history)} chars")
+
+        if at_end:
+            scrollbar = target_widget.verticalScrollBar()
+            if scrollbar:
+                try: QApplication.processEvents(); scrollbar.setValue(scrollbar.maximum()); target_widget.ensureCursorVisible()
+                except RuntimeError: print("Warning: Could not scroll/ensure cursor visible.")
+
 
     def add_cli_output(self, message_bytes: bytes, message_type: str = "output"):
-        # Adds decoded output from worker threads to the CLI display
-        # (No changes needed here, platform check for CLIXML remains relevant)
-        decoded_message = _decode_output(message_bytes);
-        message_to_display = decoded_message
+        # Adds message (decoded) to the CLI output display (left pane)
+        if self._closing or not self.cli_output_display: return
+
+        target_widget = self.cli_output_display
+        decoded_message = _decode_output(message_bytes).rstrip()
+        if not decoded_message: return
+
+        try:
+            cursor = target_widget.textCursor(); at_end = cursor.atEnd()
+            cursor.movePosition(QTextCursor.MoveOperation.End); target_widget.setTextCursor(cursor)
+        except RuntimeError: print("Warning: Could not get/set CLI text cursor."); return
+
         current_theme = config.APP_THEME
+        prefix_format = QTextCharFormat(); message_format = QTextCharFormat()
+        prefix_to_check = None; prefix_color = None; message_color = None
 
-        # Filter CLIXML (Windows specific)
-        is_clixml = False
-        if platform.system() == "Windows" and decoded_message.strip().startswith("#< CLIXML"):
-             is_clixml = True
-        if is_clixml: return
+        # Heuristics for coloring based on prefixes (can be improved)
+        if message_type == "user" and decoded_message.startswith("User: "): # Manual command echo
+            prefix_to_check = "User: "; prefix_color = get_color('user', current_theme)
+        elif message_type == "output" and decoded_message.startswith("Model: "): # AI command echo
+             prefix_to_check = "Model: "; prefix_color = get_color('model', current_theme)
 
-        # Determine Color
-        color = None
-        is_model_echo = decoded_message.strip().startswith("Model:")
+        # Determine message color based on type
+        if message_type == "error":
+            message_color = get_color('cli_error', current_theme)
+        elif message_type == "system": message_color = get_color('system', current_theme)
+        else: message_color = get_color('cli_output', current_theme) # Default output
 
-        if is_model_echo:
-            color = get_color('model', current_theme)
-        elif message_type == "error":
-            message_to_display = f"[stderr] {decoded_message}"
-            if current_theme != "system":
-                color = get_color('cli_error', current_theme)
-        elif message_type == "cli_cmd_echo":
-            if current_theme != "system":
-                color = get_color('cli_cmd_echo', current_theme)
-        elif message_type == "system":
-            if current_theme != "system":
-                color = get_color('system', current_theme)
-        elif current_theme != "system":
-             color = get_color('cli_output', current_theme)
+        # Override for system theme if needed
+        if current_theme == "system":
+            if message_type == "error":
+                 message_color = target_widget.palette().color(QPalette.ColorRole.BrightText)
+                 if not message_color.isValid() or message_color.name() == "#000000": message_color = QColor("red")
+            elif message_type == "system":
+                 message_color = target_widget.palette().color(QPalette.ColorRole.ToolTipText)
+                 if not message_color.isValid(): message_color = target_widget.palette().color(QPalette.ColorRole.Text)
+            else: message_color = target_widget.palette().color(QPalette.ColorRole.Text)
 
-        # Add Formatted Text
-        text_to_insert = message_to_display.rstrip() + '\n'
-        self.add_formatted_text(self.cli_output_display, text_to_insert, color)
+        # Insert text safely
+        try:
+            if prefix_to_check and decoded_message.startswith(prefix_to_check):
+                if prefix_color: prefix_format.setForeground(prefix_color)
+                cursor.setCharFormat(prefix_format); cursor.insertText(prefix_to_check)
+                message_part = decoded_message[len(prefix_to_check):]
+                if message_color: message_format.setForeground(message_color)
+                cursor.setCharFormat(message_format); cursor.insertText(message_part + "\n")
+            else:
+                if message_color: message_format.setForeground(message_color)
+                cursor.setCharFormat(message_format); cursor.insertText(decoded_message + "\n")
+        except RuntimeError: print("Warning: Could not insert CLI text."); return
+
+        # Scroll safely
+        if at_end:
+            scrollbar = target_widget.verticalScrollBar()
+            if scrollbar:
+                try: QApplication.processEvents(); scrollbar.setValue(scrollbar.maximum()); target_widget.ensureCursorVisible()
+                except RuntimeError: print("Warning: Could not scroll/ensure CLI cursor visible.")
 
     def show_help(self):
-        # Displays help text in the chat window
-        # (Updated to reflect Windows-only context, e.g., always PowerShell, always 'cls')
-        help_title = f"--- {APP_NAME} 帮助 ---"; available_commands = "可用命令 (在聊天输入框输入):"; cmd_help = "/help          显示此帮助信息。"
-        cmd_mode = f"/mode [suggest] 设置 AI 命令模式。当前: '{self.current_mode}'。"; mode_explanation = "              suggest: AI 在 <cmd> 标签中提出命令, 然后执行。"
-        cmd_clear = "/clear         清除聊天显示和历史记录 (同 '清除聊天' 按钮)。"; cmd_clear_cli = "/clear_cli     清除命令行输出显示。"; cmd_clear_all = "/clear_all     清除两个显示区域及聊天历史。"
-        cmd_settings = "/settings      打开应用程序设置对话框 (API密钥, 主题等)。"; cmd_save = "/save          手动保存状态 (聊天历史, 当前目录)。重启时自动加载。"
-        cmd_cwd = "/cwd           在聊天中显示完整当前工作目录。"; cmd_exit = "/exit          关闭应用程序。"
-        gui_elements = "界面元素:"; gui_toolbar = f"- 工具栏: 设置按钮, 当前目录 (短路径), 模型 ID ({config.MODEL_ID or 'N/A'}), 当前模式, 状态指示灯 (绿:空闲, 红:忙碌)。"; gui_clear_btn = "- 清除聊天按钮: 清除聊天显示和历史记录。"; gui_send_btn = "- 发送按钮: 发送消息给 AI。"
-        manual_commands_title = "手动命令 (在命令行输入框输入):"; shell_name = "PowerShell"; # Assume PowerShell on Windows
-        example_prompt = self.cli_prompt_label.text() if self.cli_prompt_label else "PS C:\\Path>" # Windows Example
-        manual_desc1 = f" - 直接在 {shell_name} 输入框 (形如 {example_prompt}) 输入并按回车。"
-        manual_desc2 = f" - 使用 ↑ / ↓ 键浏览已输入的命令历史。"; manual_desc3 = f" - 标准 {shell_name} 命令可用 (例如 'Get-ChildItem', 'cd ..', 'echo hello', 'python script.py')。"; manual_desc4 = " - 使用 'cd <目录>' 更改工作目录。支持相对/绝对路径和 '~' (用户主目录)。"; manual_desc5 = f" - 使用 'cls' 或 'clear' 清空命令行输出显示。" # Mention both cls and clear
-        ai_interaction_title = "AI 交互 (在聊天输入框输入):"; ai_desc1 = " - 向 AI 请求任务帮助 (例如 “列出当前目录的 python 文件”, “显示 git 状态”, “创建一个名为 temp 的目录”)" ; ai_desc2 = f" - 在 '{self.current_mode}' 模式下, 如果 AI 通过 <cmd>标签</cmd> 建议命令, 它将在命令行窗口中自动回显并执行。"; ai_desc3 = " - 如果 AI 的响应不包含 <cmd> 标签, 则仅在聊天窗口显示文本回复。"; timing_info = " - 模型回复后会附带本次请求的耗时信息。"
-        help_text = f"{help_title}\n\n{available_commands}\n {cmd_help}\n {cmd_mode}\n{mode_explanation}\n {cmd_clear}\n {cmd_clear_cli}\n {cmd_clear_all}\n {cmd_settings}\n {cmd_save}\n {cmd_cwd}\n {cmd_exit}\n\n{gui_elements}\n {gui_toolbar}\n {gui_clear_btn}\n {gui_send_btn}\n\n{manual_commands_title}\n{manual_desc1}\n{manual_desc2}\n{manual_desc3}\n{manual_desc4}\n{manual_desc5}\n\n{ai_interaction_title}\n{ai_desc1}\n{ai_desc2}\n{ai_desc3}\n{timing_info}\n"
-        self.add_chat_message("Help", help_text, add_to_internal_history=False) # Don't add help to history
+        # (Same logic, relies on add_chat_message which now has checks)
+        help_title = f"--- {APP_NAME} 帮助 ---"
+        core_info = """
+**主要操作:**
+1.  **与 AI 对话 (上方聊天窗口):**
+    - 输入你的任务请求 (例如: "列出当前目录的 python 文件", "创建 temp 目录")。
+    - AI 会回复，并自动执行建议的 `<cmd>命令</cmd>`。
+    - (可选) 如果在设置中启用“自动将近期CLI输出作为上下文发送给AI”，则左侧CLI输出的**全部**内容会自动作为上下文发送给AI。
+    - 输入 `/` 开头的命令执行特殊操作。
+2.  **执行手动命令 (下方命令行窗口):**
+    - 输入标准的 Shell 命令 (如 `dir`, `Get-ChildItem`, `cd ..`, `python script.py`)。
+    - 按 Enter 执行。
+    - 使用 `↑` / `↓` 键浏览命令历史。
+    - 使用 `cd <目录>` 更改工作目录。
+    - 使用 `cls` (Win) 或 `clear` (Linux/Mac) 清空此窗口。
+"""
+        commands_title = "**常用聊天命令:**"
+        cmd_help = "/help          显示此帮助。"
+        cmd_settings = "/settings      打开设置 (API密钥, 主题, CLI上下文等)。"
+        cmd_clear = "/clear         清除聊天窗口及历史。"
+        cmd_clear_cli = "/clear_cli     清除命令行窗口。"
+        cmd_cwd = "/cwd           在聊天中显示当前完整目录。"
+        cmd_copy_cli = "/copy_cli      复制左侧 CLI 的全部输出到剪贴板。"
+        cmd_show_cli = "/show_cli [N]  在聊天中显示左侧 CLI 输出的最后 N 行 (默认 10)。"
+        cmd_exit = "/exit          退出 {APP_NAME}。"
+        toolbar_info_title = "**工具栏提示:**"
+        toolbar_desc = f"- 左侧: 设置按钮。\n- 右侧: 当前目录 | 模型({config.MODEL_ID or 'N/A'}) | 状态灯(🟢空闲/🔴忙碌)。"
+        help_text = f"{help_title}\n\n{core_info}\n\n{commands_title}\n {cmd_help}\n {cmd_settings}\n {cmd_clear}\n {cmd_clear_cli}\n {cmd_cwd}\n {cmd_copy_cli}\n {cmd_show_cli}\n {cmd_exit}\n\n{toolbar_info_title}\n{toolbar_desc}\n"
+        self.add_chat_message("Help", help_text, add_to_internal_history=False)
 
     # --- Event Handling and Slots ---
 
     @Slot()
     def handle_send_message(self):
-        # Handles sending a message from the chat input to the AI
-        # (No changes needed here)
+        if self._closing or not self.chat_input: return
         user_prompt = self.chat_input.toPlainText().strip()
-        if not user_prompt: return;
-        self.chat_input.clear() # Clear input after getting text
+        if not user_prompt: return
+        self.chat_input.clear()
 
-        # Handle slash commands first
-        if user_prompt.startswith("/"): self.handle_slash_command(user_prompt); return
+        if user_prompt.startswith("/"):
+            self.handle_slash_command(user_prompt)
+            return
 
-        # Check API config before proceeding
         if not config.API_KEY or not config.API_URL or not config.MODEL_ID:
             self.add_chat_message("Error", "API 未配置。请使用“设置”按钮或 /settings 命令进行配置。")
             return
 
-        # Stop any previous API worker if running
         self.stop_api_worker()
 
-        # Add user message to display and history
-        self.add_chat_message("User", user_prompt)
+        # Add user's message FIRST
+        self.add_chat_message("User", user_prompt, add_to_internal_history=True)
+        history_for_worker = list(self.conversation_history) # Copy current history
 
-        # Set UI to busy state BEFORE starting thread
+        if config.INCLUDE_CLI_CONTEXT and self.cli_output_display:
+            full_cli_text = self.cli_output_display.toPlainText().strip()
+            if full_cli_text: # Check if CLI text is not empty
+                cli_context_text = full_cli_text
+                context_role = "user" # Using 'user' role for context message
+                context_msg_content = (
+                    f"--- 当前 CLI 输出 (完整) ---\n"
+                    f"{cli_context_text}\n"
+                    f"--- CLI 输出结束 ---"
+                )
+                if len(history_for_worker) >= 1:
+                    history_for_worker.insert(-1, (context_role, context_msg_content))
+                else: # Fallback
+                    history_for_worker.append((context_role, context_msg_content))
+                    history_for_worker.append(("User", user_prompt)) # Re-add user prompt
+
         self.set_busy_state(True, "api")
         print("Starting ApiWorkerThread...")
-
-        # Create and start the API worker thread
         self.api_worker_thread = ApiWorkerThread(
-            api_key=config.API_KEY, api_url=config.API_URL, model_id=config.MODEL_ID,
-            history=list(self.conversation_history), prompt=user_prompt,
-            mode=self.current_mode, cwd=self.current_directory
+            api_key=config.API_KEY,
+            api_url=config.API_URL,
+            model_id=config.MODEL_ID,
+            history=history_for_worker, # Pass the potentially modified history
+            prompt=user_prompt,
+            cwd=self.current_directory
         )
-        # Connect signals
-        self.api_worker_thread.api_result.connect(self.handle_api_result) # Model text reply
-        self.api_worker_thread.cli_output_signal.connect(lambda output_bytes: self.add_cli_output(output_bytes, "output")) # Command stdout
-        self.api_worker_thread.cli_error_signal.connect(lambda error_bytes: self.add_cli_output(error_bytes, "error"))    # Command stderr
-        self.api_worker_thread.directory_changed_signal.connect(self.handle_directory_change) # Directory change
-        self.api_worker_thread.task_finished.connect(lambda: self.handle_task_finished("api")) # Task completion
+        self.api_worker_thread.api_result.connect(self.handle_api_result)
+        self.api_worker_thread.cli_output_signal.connect(lambda b: self.add_cli_output(b, "output"))
+        self.api_worker_thread.cli_error_signal.connect(lambda b: self.add_cli_output(b, "error"))
+        self.api_worker_thread.directory_changed_signal.connect(self.handle_directory_change)
+        self.api_worker_thread.task_finished.connect(lambda: self.handle_task_finished("api"))
         self.api_worker_thread.start()
 
 
     def handle_slash_command(self, command):
-        # Processes slash commands entered in the chat input
-        # (No changes needed here)
+        if self._closing: return
         command_lower = command.lower(); parts = command.split(maxsplit=1); cmd_base = parts[0].lower(); arg = parts[1].strip() if len(parts) == 2 else None
         print(f"Processing slash command: {command}")
 
         if cmd_base == "/exit": self.close()
         elif cmd_base == "/clear": self.handle_clear_chat()
-        elif cmd_base == "/clear_cli":
-            self.cli_output_display.clear()
-            self.add_cli_output(f"命令行显示已清除。当前目录: {self.current_directory}".encode(), "system") # Use system type
+        elif cmd_base == "/clear_cli": self.handle_clear_cli() # <<< Use the new handler >>>
         elif cmd_base == "/clear_all":
-            self.handle_clear_chat() # Clears chat display + history
-            self.cli_output_display.clear()
+            self.handle_clear_chat()
+            self.handle_clear_cli() # <<< Use the new handler >>>
             self.add_chat_message("System", "聊天和命令行显示已清除。", add_to_internal_history=False)
-            self.add_cli_output(f"命令行显示已清除。当前目录: {self.current_directory}".encode(), "system")
         elif cmd_base == "/settings": self.open_settings_dialog()
         elif cmd_base == "/save": self.save_state(); self.add_chat_message("System", "当前状态 (历史, CWD) 已保存。")
         elif cmd_base == "/help": self.show_help()
-        elif cmd_base == "/mode":
-            if arg:
-                if arg in ["suggest"]: # Only 'suggest' mode currently
-                    self.current_mode = arg
-                    self.add_chat_message("System", f"模式已设为: {self.current_mode}")
-                    self.update_mode_display()
-                else: self.add_chat_message("Error", f"无效模式 '{arg}'。可用模式: suggest")
-            else: self.add_chat_message("Error", f"用法: /mode [suggest]。当前模式: '{self.current_mode}'")
         elif cmd_base == "/cwd": self.add_chat_message("System", f"当前工作目录: {self.current_directory}")
-        else: self.add_chat_message("Error", f"未知命令: {command}。输入 /help 获取帮助。")
+        elif cmd_base == "/copy_cli":
+            if self.cli_output_display:
+                full_cli_text = self.cli_output_display.toPlainText()
+                if full_cli_text:
+                    try:
+                        clipboard = QApplication.clipboard() # Use QApplications clipboard
+                        if clipboard:
+                            clipboard.setText(full_cli_text)
+                            self.add_chat_message("System", "左侧 CLI 输出已复制到剪贴板。", add_to_internal_history=False)
+                        else:
+                             self.add_chat_message("Error", "无法访问剪贴板。", add_to_internal_history=False)
+                    except Exception as e:
+                        self.add_chat_message("Error", f"复制到剪贴板时出错: {e}", add_to_internal_history=False)
+                else:
+                    self.add_chat_message("System", "左侧 CLI 输出为空。", add_to_internal_history=False)
+            else:
+                 self.add_chat_message("Error", "无法访问 CLI 输出区域。", add_to_internal_history=False)
 
+        elif cmd_base == "/show_cli":
+            if self.cli_output_display:
+                lines_to_show = 10 # Default
+                if arg:
+                    try: lines_to_show = int(arg); lines_to_show = max(1, lines_to_show) # Ensure positive
+                    except ValueError: self.add_chat_message("Error", f"无效的行数: '{arg}'", add_to_internal_history=False); return
+
+                full_cli_text = self.cli_output_display.toPlainText()
+                lines = full_cli_text.strip().splitlines()
+                last_n_lines = lines[-lines_to_show:]
+                if last_n_lines:
+                    header = f"--- 左侧 CLI 输出 (最后 {len(last_n_lines)} 行) ---"
+                    cli_content_message = header + "\n" + "\n".join(last_n_lines)
+                    self.add_chat_message("System", cli_content_message, add_to_internal_history=False)
+                else:
+                    self.add_chat_message("System", "左侧 CLI 输出为空。", add_to_internal_history=False)
+            else:
+                 self.add_chat_message("Error", "无法访问 CLI 输出区域。", add_to_internal_history=False)
+        else: self.add_chat_message("Error", f"未知命令: {command}。输入 /help 获取帮助。")
 
     @Slot()
     def handle_clear_chat(self):
-        # Clears the chat display and internal history deque
-        # (No changes needed here)
+        # (Same logic, already has check)
+        if self._closing: return
         print("Clear Chat action triggered.")
-        self.chat_history_display.clear(); self.conversation_history.clear()
-        # Add a notification message, but don't add it to the (now empty) history
+        if self.chat_history_display: self.chat_history_display.clear()
+        self.conversation_history.clear()
         self.add_chat_message("System", "聊天历史已清除。", add_to_internal_history=False)
-        self.save_state(); # Save the cleared state
+        self.save_state();
         print("Chat history display and internal history deque cleared and state saved.")
 
+    # <<< ADDED: Handler for the new Clear CLI button >>>
+    @Slot()
+    def handle_clear_cli(self):
+        """Clears the CLI output display."""
+        if self._closing:
+            return
+        print("Clear CLI action triggered.")
+        if self.cli_output_display:
+            self.cli_output_display.clear()
+            print("CLI output display cleared.")
+        else:
+            print("Warning: CLI output display not found during clear action.")
+        # No need to save state as CLI output is not saved
+        # Focus can remain where it is or go back to CLI input if desired
+        if self.cli_input:
+            # Option: Add a short delay before setting focus if clearing feels abrupt
+            # QTimer.singleShot(50, lambda: self.cli_input.setFocus())
+            self.cli_input.setFocus()
 
     @Slot()
     def handle_manual_command(self):
-        # Handles executing a command entered in the CLI input
+        # Handles manual command input from CLI
+        if self._closing or not self.cli_input: return
         command = self.cli_input.text().strip();
         if not command: return
 
-        # Add to CLI history (if different from last command)
+        # Add to CLI command history (distinct from chat history)
         if not self.cli_command_history or self.cli_command_history[-1] != command:
             self.cli_command_history.append(command)
         self.cli_history_index = -1 # Reset history navigation index
-        self.cli_input.clear() # Clear input field
+        self.cli_input.clear()
 
-        # <<< 修改开始: 拦截 clear/cls 命令 (Windows 专用) >>>
-        # Intercept 'cls' or 'clear' locally for faster clearing on Windows
+        # Handle built-in clear command directly (using the new handler)
         command_lower = command.lower()
-        # Since it's Windows-only, check for both 'cls' and 'clear'
-        if command_lower == "cls" or command_lower == "clear":
-            print(f"Intercepted '{command}' command on Windows. Clearing CLI display directly.")
-            self.cli_output_display.clear()
-            # Optionally add a confirmation message back to the CLI display
-            self.add_cli_output(f"命令行显示已清除。当前目录: {self.current_directory}".encode(), "system")
-            return # Prevent sending the command to the worker thread
-        # <<< 修改结束 >>>
+        if platform.system() == "Windows" and (command_lower == "cls" or command_lower == "clear"):
+            print(f"Intercepted '{command}' command. Clearing CLI display directly.")
+            self.handle_clear_cli()
+            return
+        elif platform.system() != "Windows" and command_lower == "clear":
+            print(f"Intercepted '{command}' command. Clearing CLI display directly.")
+            self.handle_clear_cli()
+            return
 
-        # Stop any previous manual command worker if running
-        self.stop_manual_worker();
+        # Stop previous manual worker if any
+        self.stop_manual_worker()
 
-        # Echo the command to the CLI output
-        # Use the already formatted prompt text (which has uppercase drive if applicable)
-        prompt_text = self.cli_prompt_label.text() if self.cli_prompt_label else "PS> " # Assume PS prompt
-        self.add_cli_output(f"{prompt_text}{command}".encode(), "cli_cmd_echo") # Encode echo message
+        # Echo command to CLI display (as User)
+        echo_message_bytes = f"User: {command}".encode('utf-8')
+        self.add_cli_output(echo_message_bytes, "user")
 
-        # Set UI to busy state BEFORE starting thread
+        # Set busy state and start worker thread
         self.set_busy_state(True, "manual")
         print(f"Starting ManualCommandThread for: {command}")
-
-        # Create and start the manual command worker thread
         self.manual_cmd_thread = ManualCommandThread(command, self.current_directory)
-        # Connect signals
-        self.manual_cmd_thread.cli_output_signal.connect(lambda output_bytes: self.add_cli_output(output_bytes, "output"))
-        self.manual_cmd_thread.cli_error_signal.connect(lambda error_bytes: self.add_cli_output(error_bytes, "error"))
+        # Connect signals (same as before)
+        self.manual_cmd_thread.cli_output_signal.connect(lambda b: self.add_cli_output(b, "output"))
+        self.manual_cmd_thread.cli_error_signal.connect(lambda b: self.add_cli_output(b, "error"))
         self.manual_cmd_thread.directory_changed_signal.connect(self.handle_directory_change)
         self.manual_cmd_thread.command_finished.connect(lambda: self.handle_task_finished("manual"))
         self.manual_cmd_thread.start()
 
 
     def keyPressEvent(self, event: QKeySequence):
-        # Handles Up/Down arrow keys in CLI input for history navigation
-        # (No changes needed here)
+        # Handles CLI history navigation (Up/Down arrows)
         focused_widget = QApplication.focusWidget()
         if focused_widget == self.cli_input:
             key = event.key(); modifiers = event.modifiers()
-            # Up Arrow
             if key == Qt.Key.Key_Up and not modifiers:
-                if not self.cli_command_history: event.accept(); return # No history
-                if self.cli_history_index == -1: # Start from the end
-                    self.cli_history_index = len(self.cli_command_history) - 1
-                elif self.cli_history_index > 0: # Move further back
-                    self.cli_history_index -= 1
-                else: event.accept(); return # Already at the beginning
-                # Display the history item
+                if not self.cli_command_history: event.accept(); return
+                if self.cli_history_index == -1: self.cli_history_index = len(self.cli_command_history) - 1
+                elif self.cli_history_index > 0: self.cli_history_index -= 1
+                else: event.accept(); return # Already at the oldest
                 if 0 <= self.cli_history_index < len(self.cli_command_history):
                     self.cli_input.setText(self.cli_command_history[self.cli_history_index])
                     self.cli_input.end(False) # Move cursor to end
-                event.accept(); return # Consume the event
-            # Down Arrow
+                event.accept(); return
             elif key == Qt.Key.Key_Down and not modifiers:
-                if self.cli_history_index == -1: event.accept(); return # Not navigating history
-                if self.cli_history_index < len(self.cli_command_history) - 1: # Move forward
+                if self.cli_history_index == -1: event.accept(); return # Not navigating
+                if self.cli_history_index < len(self.cli_command_history) - 1:
                     self.cli_history_index += 1;
                     self.cli_input.setText(self.cli_command_history[self.cli_history_index]);
-                    self.cli_input.end(False)
-                else: # Reached the end, clear input and stop navigating
+                    self.cli_input.end(False) # Move cursor to end
+                else: # Reached the newest or beyond, clear input
                     self.cli_history_index = -1; self.cli_input.clear()
-                event.accept(); return # Consume the event
-            # Any other key press while navigating resets the index
-            elif self.cli_history_index != -1 and key not in (
-                Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_Alt, Qt.Key.Key_Meta,
-                Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_PageUp, Qt.Key.Key_PageDown,
-                Qt.Key.Key_Home, Qt.Key.Key_End ):
-                 self.cli_history_index = -1 # Stop navigating on other input
-        super().keyPressEvent(event) # Pass other key events
-
+                event.accept(); return
+            elif self.cli_history_index != -1 and key not in ( Qt.Key.Key_Control, Qt.Key.Key_Shift, Qt.Key.Key_Alt, Qt.Key.Key_Meta, Qt.Key.Key_Up, Qt.Key.Key_Down, Qt.Key.Key_PageUp, Qt.Key.Key_PageDown, Qt.Key.Key_Home, Qt.Key.Key_End ):
+                 # If user types while navigating history, stop navigating
+                 self.cli_history_index = -1
+        super().keyPressEvent(event) # Pass event on if not handled
 
     def set_busy_state(self, busy: bool, task_type: str):
         """Updates UI element states (enabled/disabled) and the status indicator."""
-        # (No changes needed here)
+        if self._closing: return
         print(f"Setting busy state: {busy} for task type: {task_type}")
 
-        # Enable/Disable input widgets based on task type
-        if task_type == "api":
-            self.chat_input.setEnabled(not busy)
-            self.send_button.setEnabled(not busy)
-            self.clear_chat_button.setEnabled(not busy)
-        elif task_type == "manual":
-            self.cli_input.setEnabled(not busy);
+        is_api_task = task_type == "api"
+        is_manual_task = task_type == "manual"
 
-        # Update the status indicator immediately when a task starts or might end
-        if busy:
-            self.update_status_indicator(True) # Set to red
-        else:
-            # When a task finishes, *check the overall busy state*
-            # Only set to green if NO tasks are running anymore
-            QApplication.processEvents() # Process events before potentially changing state
-            if not self.is_busy():
-                 print("All tasks finished, setting indicator to idle (green).")
-                 self.update_status_indicator(False) # Set to green
-            else:
-                 print("A task finished, but another is still running. Indicator remains busy (red).")
+        is_api_currently_busy = self.api_worker_thread and self.api_worker_thread.isRunning()
+        is_manual_currently_busy = self.manual_cmd_thread and self.manual_cmd_thread.isRunning()
 
+        next_api_busy = (is_api_currently_busy and not (is_api_task and not busy)) or (is_api_task and busy)
+        next_manual_busy = (is_manual_currently_busy and not (is_manual_task and not busy)) or (is_manual_task and busy)
 
-        # Set focus back to the appropriate input field when becoming idle
-        if not busy:
-            # Prioritize CLI input focus if it was the last thing used?
-            # Or just focus the one that became enabled.
-            if task_type == "api" and self.chat_input.isEnabled(): self.chat_input.setFocus()
-            elif task_type == "manual" and self.cli_input.isEnabled(): self.cli_input.setFocus()
+        # --- Update Enabled State ---
+        if self.chat_input: self.chat_input.setEnabled(not next_api_busy)
+        if self.send_button: self.send_button.setEnabled(not next_api_busy)
+        if self.clear_chat_button: self.clear_chat_button.setEnabled(not next_api_busy)
+        # <<< MODIFIED: Manage the new Clear CLI button's state >>>
+        # Should be disabled when a manual command is running (like the CLI input)
+        if self.clear_cli_button: self.clear_cli_button.setEnabled(not next_manual_busy)
+        # <<< END MODIFICATION >>>
+        if self.cli_input: self.cli_input.setEnabled(not next_manual_busy)
+
+        indicator_busy_state = next_api_busy or next_manual_busy
+        self.update_status_indicator(indicator_busy_state)
+
+        # --- Set Focus ---
+        if not busy: # Only set focus when a task *finishes*
+             QApplication.processEvents() # Ensure UI updates before focus change
+             if not (next_api_busy or next_manual_busy): # If *no* tasks are running
+                 if task_type == "api" and self.chat_input and self.chat_input.isEnabled():
+                     self.chat_input.setFocus()
+                     print(f"Task '{task_type}' finished, setting focus to chat input.")
+                 elif task_type == "manual" and self.cli_input and self.cli_input.isEnabled():
+                     self.cli_input.setFocus()
+                     print(f"Task '{task_type}' finished, setting focus to CLI input.")
+             else:
+                 print(f"Task '{task_type}' finished, but another task is running. Not setting focus.")
 
 
     @Slot(str, float)
     def handle_api_result(self, reply: str, elapsed_time: float):
-        # Handles the text reply received from the API worker
-        # (No changes needed here)
+        # Handles result from API worker thread
+        if self._closing: return
         time_str = f" (耗时: {elapsed_time:.2f} 秒)"; message_with_time = f"{reply}{time_str}"
-        self.add_chat_message("Model", message_with_time)
-        # Note: Worker thread will continue to execute command if present.
-        # Status is set back to idle in handle_task_finished.
+        self.add_chat_message("Model", message_with_time, add_to_internal_history=True)
+
 
     @Slot(str, bool)
     def handle_directory_change(self, new_directory: str, is_manual_command: bool):
-        # Handles the signal emitted when a 'cd' command changes the directory
-        # (No changes needed here)
+        # Handles directory change signaled by workers
+        if self._closing: return
         if os.path.isdir(new_directory):
              old_directory = self.current_directory
-             self.current_directory = os.path.normpath(new_directory) # Update internal state
-
-             # Synchronize process working directory
-             try:
-                 os.chdir(self.current_directory) # Attempt to change process CWD
-                 print(f"Process working directory successfully changed to: {self.current_directory}")
+             self.current_directory = os.path.normpath(new_directory)
+             try: os.chdir(self.current_directory); print(f"Process working directory successfully changed to: {self.current_directory}")
              except Exception as e:
                  print(f"Error changing process working directory to '{self.current_directory}': {e}")
-                 # Optionally notify user via CLI
                  error_msg = f"错误: 无法将进程工作目录更改为 '{self.current_directory}': {e}"
-                 self.add_cli_output(error_msg.encode(), "error")
-                 # Consider reverting self.current_directory back to old_directory?
-                 # self.current_directory = old_directory
-                 # print(f"Reverted internal current_directory state to: {self.current_directory}")
-                 # Or just proceed with mismatched state but warn user. Current approach: proceed.
-
-             # Update UI reflecting the new directory (will use uppercase drive if applicable)
-             self.update_cwd_label(); # Updates toolbar and CLI prompt
+                 self.add_cli_output(error_msg.encode(), "error") # This error doesn't need [stderr] prefix either
+             self.update_cwd_label();
              source = "手动命令" if is_manual_command else "AI 命令"
              print(f"App directory state changed from '{old_directory}' to '{self.current_directory}' via {source}")
-             self.save_state() # Save the new CWD state (stores original case)
+             self.save_state()
         else:
             print(f"Warning: Directory change received for non-existent path '{new_directory}'")
             error_msg = f"Error: Directory not found: '{new_directory}'"
-            self.add_cli_output(error_msg.encode(), "error") # Show error in CLI
+            self.add_cli_output(error_msg.encode(), "error") # This error doesn't need [stderr] prefix either
 
     @Slot(str)
     def handle_task_finished(self, task_type: str):
-        """Handles the finished signal from worker threads."""
-        # (No changes needed here)
+        # Handles finished signal from worker threads
+        if self._closing: return
         print(f"{task_type.capitalize()}WorkerThread finished.")
-
-        # Clear the reference to the finished thread
+        self.set_busy_state(False, task_type)
         if task_type == "api": self.api_worker_thread = None
         elif task_type == "manual": self.manual_cmd_thread = None
 
-        # Update the busy state. This will check if *any* thread is still running.
-        # It enables inputs and sets the indicator to green ONLY if all are finished.
-        self.set_busy_state(False, task_type)
 
     @Slot()
     def open_settings_dialog(self):
-        """Opens the settings configuration dialog."""
-        # (No changes needed here)
-        if self.settings_dialog_open: return # Prevent multiple dialogs
+        # Handles opening the settings dialog and processing the results
+        if self.settings_dialog_open or self._closing: return
         self.settings_dialog_open = True
         print("Opening settings dialog...")
         dialog = SettingsDialog(self)
         current_theme_before = config.APP_THEME
-        current_model_id_before = config.MODEL_ID
-        result = dialog.exec() # Show dialog modally
+        current_config_before = config.get_current_config() # Get full config before
+
+        result = dialog.exec()
 
         if result == QDialog.DialogCode.Accepted:
             print("Settings dialog accepted.")
-            api_key, api_url, model_id, auto_startup, new_theme = dialog.get_values()
+            # Unpack values (assuming settings dialog returns them in order)
+            (api_key, api_url, model_id, auto_startup, new_theme,
+             include_cli_context, include_timestamp) = dialog.get_values() # Assumes get_values is updated
 
-            # Check if any configuration actually changed
-            config_after_dialog_interaction = config.get_current_config()
+            # Check for changes (assumes config state includes timestamp)
             config_changed = (
-                api_key != config_after_dialog_interaction['api_key'] or
-                api_url != config_after_dialog_interaction['api_url'] or
-                model_id != config_after_dialog_interaction['model_id'] or
-                auto_startup != config_after_dialog_interaction['auto_startup'] or
-                new_theme != config_after_dialog_interaction['theme']
+                api_key != current_config_before['api_key'] or
+                api_url != current_config_before['api_url'] or
+                model_id != current_config_before['model_id'] or
+                auto_startup != current_config_before['auto_startup'] or
+                new_theme != current_config_before['theme'] or
+                include_cli_context != current_config_before['include_cli_context'] or
+                include_timestamp != current_config_before.get('include_timestamp_in_prompt', config.DEFAULT_INCLUDE_TIMESTAMP) # Check added safely
             )
+
+            reset_button = dialog.findChild(QPushButton, "reset_button")
+            was_reset_likely = reset_button is not None and reset_button.isDown()
 
             if config_changed:
                 print("Configuration change detected, saving...")
-                config.save_config(api_key, api_url, model_id, auto_startup, new_theme)
-                print(f"Configuration saved. New theme: {new_theme}, AutoStart: {auto_startup}, Model: {model_id}")
+                # Save config (assumes save_config is updated)
+                config.save_config(
+                    api_key, api_url, model_id, auto_startup, new_theme,
+                    include_cli_context, include_timestamp # Pass timestamp
+                )
+                print(f"Configuration saved. New theme: {new_theme}, AutoStart: {auto_startup}, Model: {model_id}, CLI Context: {include_cli_context}, Timestamp: {include_timestamp}") # Updated print
             else:
                 print("Settings dialog accepted, but no changes detected in values.")
 
-            # Refresh UI elements even if no direct save happened (e.g., after reset)
-            self.update_model_id_display() # Always refresh model ID display
+            self.update_model_id_display() # Update model display in toolbar
 
             theme_changed = new_theme != current_theme_before
-            # Reload state and apply theme if theme changed OR if other settings changed
-            # (because reset might have cleared state requiring reload)
-            if theme_changed or config_changed:
-                print(f"Theme changed: {theme_changed}, Config changed (other): {config_changed and not theme_changed}")
-                # Apply theme/palette change *before* potentially reloading history
-                if theme_changed:
-                    app = QApplication.instance(); setup_palette(app, new_theme); self.apply_theme_specific_styles()
+            if theme_changed:
+                print("Theme changed, applying new theme styles...")
+                app = QApplication.instance()
+                if app: setup_palette(app, new_theme)
+                self.apply_theme_specific_styles()
 
-                print("Reloading state (necessary after potential reset or theme change)...")
-                self.load_state() # Reload state (might be cleared by reset)
-                # Ensure process CWD matches loaded/reset CWD state
+            current_config_after_dialog = config.get_current_config()
+            should_reload_state = was_reset_likely or (not current_config_after_dialog['api_key'] and current_config_before['api_key'])
+
+            if should_reload_state:
+                print("Reset or API key removal detected. Re-loading state and syncing CWD.")
+                self.load_state()
                 try:
                     if os.path.isdir(self.current_directory):
                         os.chdir(self.current_directory)
-                        print(f"Process CWD synchronized to loaded/reset state: {self.current_directory}")
+                        print(f"Process CWD synced to loaded/reset state: {self.current_directory}")
                     else:
-                        print(f"Warning: Loaded/reset directory '{self.current_directory}' not found after settings change. Using fallback CWD.")
-                        self.current_directory = os.getcwd()
-                        os.chdir(self.current_directory) # Ensure process CWD matches fallback
-                        print(f"Using process CWD as fallback: {self.current_directory}")
-                        self.save_state() # Save the fallback CWD state
+                         print(f"Warning: Loaded/reset directory '{self.current_directory}' not found after settings change. Using initial directory.")
+                         self.current_directory = self.initial_directory
+                         try:
+                             os.chdir(self.current_directory)
+                             print(f"Using initial directory as fallback: {self.current_directory}")
+                         except Exception as e_chdir_fallback:
+                             print(f"CRITICAL: Could not even change to initial directory '{self.current_directory}': {e_chdir_fallback}")
+                             self.current_directory = os.getcwd()
+                             print(f"Using current OS CWD as final fallback: {self.current_directory}")
+                         self.save_state()
                 except Exception as e:
-                    print(f"CRITICAL: Error setting process CWD after settings change to '{self.current_directory}': {e}")
+                    print(f"CRITICAL: Error setting process CWD after settings reset/change to '{self.current_directory}': {e}")
+                self.load_and_apply_state() # Apply history etc.
 
-                self.load_and_apply_state() # Apply (potentially cleared) history to display
-            else: # If only API key etc changed, just update displays
-                 # Re-applying styles might still be good if palette colors changed slightly even within same theme name?
-                 self.apply_theme_specific_styles() # Re-apply styles just in case
+            elif theme_changed:
+                print("Theme changed, styles already applied.")
+            elif config_changed:
+                 print("Other configuration changed, reapplying styles for consistency.")
+                 self.apply_theme_specific_styles() # Reapply styles if other settings changed
 
-            # Update CWD and Prompt display after potential reset or load
-            # This will now reflect the uppercase drive letter if on Windows
-            self.update_cwd_label() # Will also update prompt
+            self.update_cwd_label() # Ensure CWD label is up-to-date
             print("CWD display updated after settings dialog.")
 
         else:
             print("Settings dialog cancelled.")
 
         self.settings_dialog_open = False
-        self.activateWindow(); self.raise_() # Ensure main window regains focus
+        self.activateWindow(); self.raise_()
 
 
     # --- State Management ---
     def save_state(self):
-        # Saves conversation history, CWD, CLI history, and splitter state
-        # (No changes needed here)
+        # Saves chat history, CLI history, current directory, and splitter state
+        if self._closing: print("Skipping save_state during close sequence."); return
         try:
-            settings = config.get_settings(); history_list = list(self.conversation_history)
-            # Save core state (stores original case CWD)
-            settings.beginGroup("state"); settings.setValue("conversation_history", json.dumps(history_list)); settings.setValue("current_directory", self.current_directory); settings.setValue("cli_history", json.dumps(list(self.cli_command_history))); settings.endGroup()
-            # Save UI state (splitter)
-            splitter = self.findChild(QSplitter, "MainSplitter")
-            if splitter: settings.beginGroup("ui"); settings.setValue("splitter_state", splitter.saveState()); settings.endGroup()
-            settings.sync(); # Ensure changes are written
-            print(f"State saved: History({len(history_list)}), CWD({self.current_directory}), CLI History({len(self.cli_command_history)})") # Log saved CWD
+            settings = config.get_settings();
+            history_list = list(self.conversation_history)
+            settings.beginGroup("state")
+            settings.setValue("conversation_history", json.dumps(history_list))
+            settings.setValue("current_directory", self.current_directory)
+            settings.setValue("cli_history", json.dumps(list(self.cli_command_history)))
+            settings.endGroup()
+            if self.splitter: settings.beginGroup("ui"); settings.setValue("splitter_state", self.splitter.saveState()); settings.endGroup()
+            else: print("Warning: Could not find splitter to save state.")
+            settings.sync();
+            print(f"State saved: Chat History({len(history_list)}), CWD({self.current_directory}), CLI History({len(self.cli_command_history)})")
         except Exception as e: print(f"Error saving state: {e}")
 
-
     def load_state(self):
-        # Loads state on startup (doesn't call os.chdir here anymore, handled in __init__)
-        # (No changes needed here)
+        # Loads state on startup
+        if self._closing: return
         print("Loading state (CWD, History, CLI History)...")
         try:
-            settings = config.get_settings()
-            restored_cwd = self.initial_directory # Default to initial app dir
-
-            # Load from settings, using defaults if missing
+            settings = config.get_settings(); restored_cwd = self.initial_directory
             settings.beginGroup("state")
-            saved_cwd = settings.value("current_directory")
-            history_json = settings.value("conversation_history", "[]")
-            cli_history_json = settings.value("cli_history", "[]")
+            saved_cwd = settings.value("current_directory");
+            history_json = settings.value("conversation_history", "[]");
+            cli_history_json = settings.value("cli_history", "[]");
             settings.endGroup()
 
-            # Validate saved CWD for internal state
             if saved_cwd and isinstance(saved_cwd, str):
                 if os.path.isdir(saved_cwd): restored_cwd = saved_cwd
                 else: print(f"Warning: Saved directory '{saved_cwd}' not found or invalid. Using initial directory.")
             else: print("No valid saved directory found. Using initial directory.")
-            self.current_directory = os.path.normpath(restored_cwd) # Set internal state variable (original case)
-            print(f"Effective internal CWD state after loading: {self.current_directory}") # Process CWD is set in __init__
+            self.current_directory = os.path.normpath(restored_cwd); print(f"Effective internal CWD state after loading: {self.current_directory}")
 
-            # Load and validate conversation history
             loaded_history = []
             try:
-                 history_list = json.loads(history_json)
-                 # Basic validation of format
+                 if isinstance(history_json, (list, tuple)): history_list = history_json
+                 else: history_list = json.loads(str(history_json))
                  if isinstance(history_list, list) and all(isinstance(item, (list, tuple)) and len(item) == 2 and isinstance(item[0], str) and isinstance(item[1], str) for item in history_list): loaded_history = history_list; print(f"Loaded {len(loaded_history)} conversation history items.")
                  elif history_json != "[]": print("Warning: Saved conversation history format invalid.")
+            except json.JSONDecodeError as e: print(f"Error decoding saved conversation history JSON: {e}. Content: '{history_json}'")
             except Exception as e: print(f"Error processing saved conversation history: {e}.")
             self.conversation_history = deque(loaded_history, maxlen=self.conversation_history.maxlen)
 
-            # Load and validate CLI command history
             loaded_cli_history = []
             try:
-                cli_history_list = json.loads(cli_history_json)
+                if isinstance(cli_history_json, list): cli_history_list = cli_history_json
+                else: cli_history_list = json.loads(str(cli_history_json))
                 if isinstance(cli_history_list, list) and all(isinstance(item, str) for item in cli_history_list): loaded_cli_history = cli_history_list; print(f"Loaded {len(loaded_cli_history)} CLI history items.")
                 elif cli_history_json != "[]": print("Warning: Saved CLI history format invalid.")
+            except json.JSONDecodeError as e: print(f"Error decoding saved CLI history JSON: {e}. Content: '{cli_history_json}'")
             except Exception as e: print(f"Error processing saved CLI history: {e}.")
             self.cli_command_history = deque(loaded_cli_history, maxlen=self.cli_command_history.maxlen); self.cli_history_index = -1
 
         except Exception as e:
             print(f"CRITICAL Error loading state: {e}. Resetting state variables.")
             self.conversation_history.clear(); self.cli_command_history.clear(); self.cli_history_index = -1
-            self.current_directory = self.initial_directory # Ensure fallback internal CWD state
+            self.current_directory = self.initial_directory
 
     # --- Thread Management ---
     def stop_api_worker(self):
-        # Stops the API worker thread if running
-        # (No changes needed here)
+        # Signals the API worker thread to stop
         if self.api_worker_thread and self.api_worker_thread.isRunning():
             print("Stopping API worker...")
-            self.api_worker_thread.stop() # Signal the thread to stop
-            self.api_worker_thread = None # Clear reference
-            # If stopping this worker makes the app idle, update state
-            if not self.is_busy():
-                 self.set_busy_state(False, "api") # Update UI elements and potentially indicator
+            self.api_worker_thread.stop()
+            return True
+        return False
 
     def stop_manual_worker(self):
-        # Stops the manual command worker thread if running
-        # (No changes needed here)
+        # Signals the manual command worker thread to stop
         if self.manual_cmd_thread and self.manual_cmd_thread.isRunning():
             print("Stopping Manual Command worker...")
-            self.manual_cmd_thread.stop() # Signal thread and try to terminate process
-            self.manual_cmd_thread = None # Clear reference
-            # If stopping this worker makes the app idle, update state
-            if not self.is_busy():
-                 self.set_busy_state(False, "manual") # Update UI elements and potentially indicator
-
+            self.manual_cmd_thread.stop()
+            return True
+        return False
 
     # --- Window Close Event ---
     def closeEvent(self, event):
-        # Handles the window close event
-        # (No changes needed here)
-        print("Close event triggered.")
-        # Stop any running background tasks cleanly
-        self.stop_api_worker(); self.stop_manual_worker()
-        print("Saving final state before closing..."); self.save_state()
-        print("Exiting application."); event.accept() # Accept the close event
+        # Handles window close: stop threads, save state
+        if self._closing: event.ignore(); return
+        self._closing = True
+        print("Close event triggered. Initiating shutdown...")
+
+        api_stopped = self.stop_api_worker()
+        manual_stopped = self.stop_manual_worker()
+
+        wait_timeout_ms = 500; threads_to_wait = []
+        if api_stopped and self.api_worker_thread: threads_to_wait.append(self.api_worker_thread)
+        if manual_stopped and self.manual_cmd_thread: threads_to_wait.append(self.manual_cmd_thread)
+
+        if threads_to_wait:
+            print(f"Waiting up to {wait_timeout_ms}ms for {len(threads_to_wait)} worker thread(s) to finish...")
+            start_wait_time = time.monotonic()
+            all_finished = False
+            while time.monotonic() - start_wait_time < wait_timeout_ms / 1000.0:
+                 all_finished = all(not thread.isRunning() for thread in threads_to_wait)
+                 if all_finished: break
+                 QApplication.processEvents()
+                 QThread.msleep(50)
+            if all_finished: print("All worker threads finished gracefully.")
+            else: print("Warning: Worker thread(s) did not finish within the timeout.")
+
+        print("Saving final state before closing...")
+        self.save_state()
+
+        print("Exiting application.")
+        event.accept()

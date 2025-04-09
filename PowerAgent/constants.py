@@ -24,8 +24,8 @@ _DARK = {
     "error": QColor("red"),
     "help": QColor(173, 216, 230), # lightblue
     "prompt": QColor("magenta"),
-    "ai_cmd_echo": QColor(255, 165, 0), # orange
-    "cli_cmd_echo": QColor(173, 216, 230), # lightblue
+    "ai_cmd_echo": QColor(255, 165, 0), # orange (DEPRECATED in favor of model color for AI echo)
+    "cli_cmd_echo": QColor(173, 216, 230), # lightblue (DEPRECATED in favor of user color for manual echo)
     "cli_output": QColor("white"),
     "cli_error": QColor(255, 100, 100), # light red
     "cli_bg": QColor(40, 40, 40), # dark gray
@@ -46,8 +46,8 @@ _LIGHT = {
     "error": QColor(200, 0, 0),       # Dark Red
     "help": QColor(0, 0, 150),        # Dark Blue
     "prompt": QColor(150, 0, 150),    # Dark Magenta
-    "ai_cmd_echo": QColor(200, 100, 0), # Darker Orange
-    "cli_cmd_echo": QColor(0, 0, 150),   # Dark Blue
+    "ai_cmd_echo": QColor(200, 100, 0), # Darker Orange (DEPRECATED)
+    "cli_cmd_echo": QColor(0, 0, 150),   # Dark Blue (DEPRECATED)
     "cli_output": QColor("black"),
     "cli_error": QColor(200, 0, 0),   # Dark Red (same as error color)
     "cli_bg": QColor(245, 245, 245), # Very light gray

@@ -1,6 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/settings_dialog.py
-# -----------------------------------------------------------------------
+# ---------------------------------------
 # gui/settings_dialog.py
 # -*- coding: utf-8 -*-
 
@@ -9,7 +9,8 @@ import os
 from PySide6.QtWidgets import (
     QDialog, QLineEdit, QPushButton, QVBoxLayout, QFormLayout,
     QDialogButtonBox, QCheckBox, QLabel, QHBoxLayout,
-    QComboBox, QSizePolicy, QSpacerItem, QGroupBox, QMessageBox # <<< ADDED QMessageBox
+    QComboBox, QSizePolicy, QSpacerItem, QGroupBox, QMessageBox,
+    QSpinBox # Keep import even if unused now, in case needed later
 )
 from PySide6.QtCore import QStandardPaths, QCoreApplication, Qt, QSize
 from PySide6.QtGui import QIcon
@@ -17,7 +18,7 @@ from PySide6.QtGui import QIcon
 # Import constants needed for tooltips/paths
 from constants import SETTINGS_APP_NAME, ORG_NAME
 # Import config functions/state
-from core import config # To get initial values AND call reset function <<< MODIFIED
+from core import config
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -30,7 +31,7 @@ class SettingsDialog(QDialog):
         self.load_initial_values()
 
         # --- Widgets ---
-        # (API Inputs, Theme, Autostart - unchanged creation, just populated by load_initial_values)
+        # (API Inputs - unchanged creation)
         self.url_input = QLineEdit(self._current_api_url)
         self.url_input.setPlaceholderText("例如: https://api.openai.com")
         self.url_input.setToolTip("输入您的 AI 服务 API 端点 URL")
@@ -53,6 +54,7 @@ class SettingsDialog(QDialog):
         key_layout = QHBoxLayout(); key_layout.setContentsMargins(0, 0, 0, 0); key_layout.setSpacing(3)
         key_layout.addWidget(self.key_input, 1); key_layout.addWidget(self.show_hide_button)
 
+        # (Theme, Autostart - unchanged creation)
         self.theme_combobox = QComboBox()
         self.theme_combobox.addItem("系统默认 (System)", "system"); self.theme_combobox.addItem("暗色 (Dark)", "dark"); self.theme_combobox.addItem("亮色 (Light)", "light")
         self.theme_combobox.setToolTip("选择应用程序界面主题。\n更改后需要应用设置。")
@@ -62,6 +64,24 @@ class SettingsDialog(QDialog):
         self.auto_startup_checkbox = QCheckBox("系统登录时启动")
         self.auto_startup_checkbox.setChecked(self._current_auto_startup)
         self.auto_startup_checkbox.setToolTip(self._get_autostart_tooltip())
+
+        # --- MODIFIED: CLI Context Widget (Checkbox Only) ---
+        self.include_cli_context_checkbox = QCheckBox("自动将近期 CLI 输出作为上下文发送给 AI")
+        self.include_cli_context_checkbox.setChecked(self._current_include_cli_context)
+        self.include_cli_context_checkbox.setToolTip(
+            "启用后，每次向 AI 发送消息时，会自动附带左侧 CLI 输出的**全部**内容。\n"
+            "这有助于 AI 理解当前状态，但也可能显著增加 API Token 消耗，尤其是在 CLI 输出很长时。"
+        )
+
+        # <<< MODIFICATION START: Add Timestamp Checkbox >>>
+        self.include_timestamp_checkbox = QCheckBox("在系统提示词中包含当前日期时间")
+        self.include_timestamp_checkbox.setChecked(self._current_include_timestamp)
+        self.include_timestamp_checkbox.setToolTip(
+            "启用后，每次向 AI 发送消息时，会在系统提示词中加入当前的日期和时间（精确到秒）。\n"
+            "这可能对需要时间信息的任务有帮助，但会略微增加提示词长度。"
+        )
+        # <<< MODIFICATION END >>>
+
 
         self.error_label = QLabel("")
         self.error_label.setStyleSheet("color: red; padding-top: 5px;"); self.error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -73,19 +93,31 @@ class SettingsDialog(QDialog):
         api_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows); api_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight); api_layout.setSpacing(10)
         api_layout.addRow("API URL:", self.url_input); api_layout.addRow("API 密钥:", key_layout); api_layout.addRow("模型 ID:", self.model_input)
 
-        ui_groupbox = QGroupBox("界面与行为"); ui_layout = QFormLayout(ui_groupbox)
-        ui_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows); ui_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight); ui_layout.setSpacing(10)
-        ui_layout.addRow("界面主题:", self.theme_combobox); ui_layout.addRow(self.auto_startup_checkbox)
+        ui_groupbox = QGroupBox("界面与行为"); ui_layout = QVBoxLayout(ui_groupbox) # Use QVBoxLayout for better control
+        ui_layout.setSpacing(10)
+
+        # Theme layout
+        theme_layout = QHBoxLayout()
+        theme_layout.addWidget(QLabel("界面主题:"))
+        theme_layout.addWidget(self.theme_combobox, 1) # Allow combobox to expand
+        ui_layout.addLayout(theme_layout)
+
+        # Autostart checkbox
+        ui_layout.addWidget(self.auto_startup_checkbox)
+
+        # CLI Context Checkbox (now directly in the VBox)
+        ui_layout.addWidget(self.include_cli_context_checkbox)
+
+        # <<< MODIFICATION START: Add Timestamp Checkbox to layout >>>
+        ui_layout.addWidget(self.include_timestamp_checkbox)
+        # <<< MODIFICATION END >>>
 
         # --- Reset Button ---
-        # <<< ADDED Reset Button >>>
         self.reset_button = QPushButton("恢复默认设置并清除缓存")
+        self.reset_button.setObjectName("reset_button") # Assign object name for potential lookup
         self.reset_button.setToolTip("将所有设置恢复为默认值，并清除聊天历史、命令历史和保存的工作目录。\n此操作无法撤销，需要确认。")
         self.reset_button.clicked.connect(self.handle_reset_settings)
-        # Put reset button in its own layout, aligned left
-        reset_layout = QHBoxLayout()
-        reset_layout.addWidget(self.reset_button)
-        reset_layout.addStretch(1) # Pushes button to the left
+        reset_layout = QHBoxLayout(); reset_layout.addWidget(self.reset_button); reset_layout.addStretch(1)
 
         # --- Standard Buttons ---
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -96,8 +128,9 @@ class SettingsDialog(QDialog):
 
         # --- Main Layout ---
         main_layout = QVBoxLayout(self)
-        main_layout.addWidget(api_groupbox); main_layout.addWidget(ui_groupbox)
-        main_layout.addLayout(reset_layout) # <<< ADDED Reset button layout >>>
+        main_layout.addWidget(api_groupbox)
+        main_layout.addWidget(ui_groupbox) # Add the whole groupbox
+        main_layout.addLayout(reset_layout)
         main_layout.addWidget(self.error_label)
         main_layout.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         main_layout.addWidget(button_box)
@@ -110,10 +143,15 @@ class SettingsDialog(QDialog):
         self._current_model_id = current_config_values.get("model_id", "")
         self._current_auto_startup = current_config_values.get("auto_startup", False)
         self._current_theme = current_config_values.get("theme", "system")
+        self._current_include_cli_context = current_config_values.get("include_cli_context", config.DEFAULT_INCLUDE_CLI_CONTEXT)
+        # <<< MODIFICATION START: Load initial timestamp value >>>
+        self._current_include_timestamp = current_config_values.get("include_timestamp_in_prompt", config.DEFAULT_INCLUDE_TIMESTAMP)
+        # <<< MODIFICATION END >>>
+
 
     def update_fields_from_config(self):
-        """Updates the UI fields based on the current config module state."""
-        # Reload values from the config module (might have been reset)
+        """Updates the UI fields based on the current config module state (e.g., after reset)."""
+        # Reload values from the config module
         self.load_initial_values()
         # Update UI elements
         self.url_input.setText(self._current_api_url)
@@ -122,6 +160,11 @@ class SettingsDialog(QDialog):
         self.auto_startup_checkbox.setChecked(self._current_auto_startup)
         current_theme_index = self.theme_combobox.findData(self._current_theme)
         self.theme_combobox.setCurrentIndex(current_theme_index if current_theme_index != -1 else 0)
+        self.include_cli_context_checkbox.setChecked(self._current_include_cli_context)
+        # <<< MODIFICATION START: Update timestamp checkbox after reset >>>
+        self.include_timestamp_checkbox.setChecked(self._current_include_timestamp)
+        # <<< MODIFICATION END >>>
+
         # Ensure password visibility is reset if key was cleared
         if not self._current_api_key:
             self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
@@ -155,45 +198,25 @@ class SettingsDialog(QDialog):
         else: self.key_input.setEchoMode(QLineEdit.EchoMode.Password); self.show_hide_button.setToolTip("显示 API 密钥")
         self._update_visibility_icon(checked)
 
-    # <<< ADDED Reset Handler >>>
     def handle_reset_settings(self):
         """Handles the reset button click."""
         reply = QMessageBox.warning(
-            self,
-            "确认重置",
+            self, "确认重置",
             "您确定要将所有设置恢复为默认值并清除所有缓存数据（包括API密钥、聊天记录、命令历史和保存的目录）吗？\n\n此操作无法撤销！",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel # Default button
+            QMessageBox.StandardButton.Cancel
         )
-
         if reply == QMessageBox.StandardButton.Yes:
             print("User confirmed reset. Resetting settings and clearing cache...")
             try:
-                # Call the reset function in the config module
                 config.reset_to_defaults_and_clear_cache()
                 print("Config module reset executed.")
-
-                # Update the fields in this dialog to reflect the reset
-                self.update_fields_from_config()
+                self.update_fields_from_config() # Update dialog fields
                 print("Settings dialog fields updated to reflect reset.")
-
-                # Inform the user
-                QMessageBox.information(
-                    self,
-                    "重置完成",
-                    "设置已恢复为默认值，缓存已清除。\n您可能需要重新配置API密钥才能使用AI功能。"
-                )
-                # We don't automatically accept/reject here. The user might still want
-                # to Cancel the dialog or make further changes before clicking OK.
-                # The main window will handle the update based on whether OK is clicked.
-
+                QMessageBox.information(self, "重置完成", "设置已恢复为默认值，缓存已清除。\n您可能需要重新配置API密钥才能使用AI功能。")
             except Exception as e:
                  print(f"Error during reset process: {e}")
-                 QMessageBox.critical(
-                    self,
-                    "重置错误",
-                    f"恢复默认设置时发生错误:\n{e}"
-                )
+                 QMessageBox.critical(self, "重置错误", f"恢复默认设置时发生错误:\n{e}")
         else:
             print("User cancelled reset.")
 
@@ -219,11 +242,18 @@ class SettingsDialog(QDialog):
             return
         self.accept()
 
+    # <<< MODIFICATION START: Add timestamp value to return tuple >>>
     def get_values(self):
-        # Logic remains the same
+        """Returns all configured values from the dialog."""
         selected_theme = self.theme_combobox.currentData()
         valid_themes = ["dark", "light", "system"]; selected_theme = selected_theme if selected_theme in valid_themes else "system"
         return (
-            self.key_input.text().strip(), self.url_input.text().strip(), self.model_input.text().strip(),
-            self.auto_startup_checkbox.isChecked(), selected_theme
+            self.key_input.text().strip(),
+            self.url_input.text().strip(),
+            self.model_input.text().strip(),
+            self.auto_startup_checkbox.isChecked(),
+            selected_theme,
+            self.include_cli_context_checkbox.isChecked(),
+            self.include_timestamp_checkbox.isChecked(), # New value added here
         )
+    # <<< MODIFICATION END >>>
