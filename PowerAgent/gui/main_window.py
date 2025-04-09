@@ -7,7 +7,7 @@
 import sys
 import os
 import json
-import platform
+import platform # 仍然需要 platform 来检查 Windows 环境 (用于其他地方)
 import re
 from collections import deque
 
@@ -273,16 +273,20 @@ class MainWindow(QMainWindow):
         try:
             self.load_state() # Tries to load saved CWD, history, etc.
             if os.path.isdir(self.current_directory):
-                os.chdir(self.current_directory)
+                os.chdir(self.current_directory) # <<< Set initial process CWD here <<<
                 print(f"Successfully set initial process working directory to: {self.current_directory}")
             else:
                 print(f"Warning: Current directory '{self.current_directory}' (loaded or initial) not found. Falling back to CWD.")
                 self.current_directory = os.getcwd()
-                os.chdir(self.current_directory)
+                os.chdir(self.current_directory) # <<< Set process CWD to fallback <<<
                 print(f"Using current working directory as fallback: {self.current_directory}")
         except Exception as e:
             print(f"Warning: Could not change process directory to '{self.current_directory}': {e}")
             self.current_directory = os.getcwd() # Last resort
+            try:
+                os.chdir(self.current_directory) # <<< Try setting process CWD to last resort <<<
+            except Exception as e2:
+                 print(f"CRITICAL: Could not set process directory even to fallback '{self.current_directory}': {e2}")
             print(f"Using fallback process working directory: {self.current_directory}")
 
 
@@ -393,20 +397,8 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self.chat_history_display, 1); right_layout.addWidget(self.chat_input); right_layout.addLayout(button_layout); splitter.addWidget(right_widget)
 
         # --- Slash Command Completer ---
-        # <<< MODIFICATION START >>>
-        # QCompleter is not directly compatible with QTextEdit.
-        # Remove or comment out the completer setup for chat_input.
-        # If you need completion, it requires a custom implementation.
+        # (No changes needed here)
         # ---
-        # self.slash_commands = ["/help", "/mode suggest", "/clear", "/clear_cli", "/clear_all", "/settings", "/save", "/cwd", "/exit"]
-        # completer_model = QStringListModel(self.slash_commands)
-        # self.completer = QCompleter(completer_model, self)
-        # self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        # self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        # self.completer.setFilterMode(Qt.MatchFlag.MatchStartsWith)
-        # self.chat_input.setCompleter(self.completer) # <<< THIS LINE IS REMOVED/COMMENTED >>>
-        # ---
-        # <<< MODIFICATION END >>>
 
 
         # --- Initial Splitter Sizes ---
@@ -424,14 +416,24 @@ class MainWindow(QMainWindow):
 
     def _get_os_fonts(self):
         # Helper to get platform-specific monospace fonts
-        mono_font_family = "Monospace"; mono_font_size = 10; label_font_size = 9
-        if platform.system() == "Windows": mono_font_family, mono_font_size, label_font_size = "Consolas, Courier New", 10, 9
-        elif platform.system() == "Darwin": mono_font_family, mono_font_size, label_font_size = "Menlo", 11, 9
-        elif platform.system() == "Linux": mono_font_family, mono_font_size, label_font_size = "Monospace", 10, 9
+        # Simplified for Windows-only assumption (but keeping the structure)
+        mono_font_family = "Consolas, Courier New"
+        mono_font_size = 10
+        label_font_size = 9
+        # Keep the platform check in case it's needed elsewhere or for future
+        if platform.system() == "Windows":
+            pass # Already set
+        elif platform.system() == "Darwin":
+            # This branch is technically unused if truly Windows-only
+            mono_font_family, mono_font_size, label_font_size = "Menlo", 11, 9
+        elif platform.system() == "Linux":
+             # This branch is technically unused if truly Windows-only
+            mono_font_family, mono_font_size, label_font_size = "Monospace", 10, 9
         return mono_font_family, mono_font_size, label_font_size
 
     def apply_theme_specific_styles(self):
         # Applies the QSS stylesheet based on the current theme
+        # (No changes needed here, platform check inside _get_os_fonts handles Windows)
         theme = config.APP_THEME
         print(f"Applying styles for theme: {theme}")
         mono_font_family, mono_font_size, label_font_size = self._get_os_fonts()
@@ -476,6 +478,7 @@ class MainWindow(QMainWindow):
 
     def load_and_apply_state(self):
         """Applies loaded history to the display. Called after load_state."""
+        # (No changes needed here)
         print(f"Applying {len(self.conversation_history)} loaded history items to display...")
         history_copy = list(self.conversation_history); self.chat_history_display.clear(); self.conversation_history.clear() # Clear display and internal before reapplying
         for role, message in history_copy: self.add_chat_message(role, message, add_to_internal_history=True)
@@ -489,12 +492,24 @@ class MainWindow(QMainWindow):
 
     def get_short_cwd(self, max_len=35):
          # Shortens the CWD for display in the toolbar
+         # (No changes needed here, platform check handles Windows drive letter)
          display_cwd = self.current_directory
+         # Capitalize drive letter for display on Windows
+         if platform.system() == "Windows" and len(display_cwd) >= 2 and display_cwd[1] == ':':
+             display_cwd = display_cwd[0].upper() + display_cwd[1:]
+
          try:
              home_dir = os.path.expanduser("~")
-             if display_cwd.startswith(home_dir):
-                 if display_cwd == home_dir: display_cwd = "~"
-                 elif display_cwd.startswith(home_dir + os.path.sep): display_cwd = "~" + display_cwd[len(home_dir):]
+             # Also capitalize home_dir if it's on a drive letter for comparison
+             home_dir_compare = home_dir
+             if platform.system() == "Windows" and len(home_dir_compare) >= 2 and home_dir_compare[1] == ':':
+                 home_dir_compare = home_dir_compare[0].upper() + home_dir_compare[1:]
+             # Compare the potentially capitalized display_cwd with the potentially capitalized home_dir_compare
+             if display_cwd.startswith(home_dir_compare):
+                 if display_cwd == home_dir_compare: display_cwd = "~"
+                 # Use original home_dir length for slicing
+                 elif display_cwd.startswith(home_dir_compare + os.path.sep): display_cwd = "~" + display_cwd[len(home_dir):]
+
              if len(display_cwd) > max_len:
                  parts = display_cwd.split(os.path.sep); num_parts = len(parts)
                  is_windows_drive_root = platform.system() == "Windows" and len(parts) == 2 and parts[1] == '' and parts[0].endswith(':')
@@ -513,45 +528,61 @@ class MainWindow(QMainWindow):
 
     def update_cwd_label(self):
         """Updates the CWD label in the toolbar."""
+        # (No changes needed here)
         if self.toolbar_cwd_label:
             short_cwd = self.get_short_cwd(max_len=30); self.toolbar_cwd_label.setText(f"{short_cwd}")
+            # Tooltip still shows the original, potentially lowercase path
             self.toolbar_cwd_label.setToolTip(f"当前工作目录: {self.current_directory}")
         self.update_prompt() # Also update CLI prompt when CWD changes
 
     def update_prompt(self):
-        """Updates the CLI prompt label to include the current directory."""
+        """Updates the CLI prompt label to include the current directory (with uppercase drive on Windows)."""
+        # (No changes needed here, platform check handles Windows prefix and drive letter)
         if not self.cli_prompt_label:
             return
 
-        shell_prefix = "PS" if platform.system() == "Windows" else "$"
+        shell_prefix = "PS" if platform.system() == "Windows" else "$" # Will be "PS"
         display_path = self.current_directory
+
+        # Capitalize drive letter for display on Windows BEFORE replacing home
+        if platform.system() == "Windows" and len(display_path) >= 2 and display_path[1] == ':':
+            display_path = display_path[0].upper() + display_path[1:]
 
         # Try to replace home directory with ~ for display
         try:
             home_dir = os.path.expanduser("~")
-            if display_path.startswith(home_dir):
-                if display_path == home_dir: display_path = "~" # Exactly home
-                elif display_path.startswith(home_dir + os.path.sep): display_path = "~" + display_path[len(home_dir):] # Replace prefix
+            # Capitalize home_dir if it's on a drive for comparison
+            home_dir_compare = home_dir
+            if platform.system() == "Windows" and len(home_dir_compare) >= 2 and home_dir_compare[1] == ':':
+                home_dir_compare = home_dir_compare[0].upper() + home_dir_compare[1:]
+             # Compare the potentially capitalized display_path with the potentially capitalized home_dir_compare
+            if display_path.startswith(home_dir_compare):
+                if display_path == home_dir_compare: display_path = "~" # Exactly home
+                 # Use original home_dir length for slicing
+                elif display_path.startswith(home_dir_compare + os.path.sep): display_path = "~" + display_path[len(home_dir):] # Replace prefix
         except Exception as e: print(f"Error processing path for prompt display: {e}") # Use original on error
 
-        # Construct the final prompt text
+        # Construct the final prompt text using the modified display_path
         prompt_text = f"{shell_prefix} {display_path}> " # Add trailing space
         self.cli_prompt_label.setText(prompt_text)
-        # Tooltip *always* shows the full, non-abbreviated path
+        # Tooltip *always* shows the full, original (potentially lowercase) path
         self.cli_prompt_label.setToolTip(f"当前工作目录: {self.current_directory}")
 
     def update_model_id_display(self):
         """Updates the model ID label in the toolbar."""
+        # (No changes needed here)
         if self.model_id_label:
             model_text = config.MODEL_ID or '未配置'; self.model_id_label.setText(f"模型: {model_text}")
             self.model_id_label.setToolTip(f"当前使用的 AI 模型 ID: {model_text}")
 
     def update_mode_display(self):
         """Updates the mode label in the toolbar."""
+        # (No changes needed here)
         if self.mode_label: self.mode_label.setText(f"模式: {self.current_mode}")
 
     def update_status_indicator(self, busy: bool):
         """Updates the visual style and tooltip of the status indicator."""
+        # (No changes needed here)
         if self.status_indicator:
             border_color = get_color("border", config.APP_THEME).name()
             # Use red when busy, green when idle
@@ -569,12 +600,14 @@ class MainWindow(QMainWindow):
 
     def is_busy(self) -> bool:
         """Checks if any background worker thread is currently running."""
+        # (No changes needed here)
         api_running = self.api_worker_thread and self.api_worker_thread.isRunning()
         manual_running = self.manual_cmd_thread and self.manual_cmd_thread.isRunning()
         return api_running or manual_running
 
     def add_formatted_text(self, target_widget: QTextEdit, text: str, color: QColor = None):
         # Helper to add text with specific color to a QTextEdit
+        # (No changes needed here)
         if not text: return
         cursor = target_widget.textCursor(); at_end = cursor.atEnd(); cursor.movePosition(QTextCursor.MoveOperation.End)
         char_format = QTextCharFormat(); current_theme = config.APP_THEME
@@ -591,37 +624,38 @@ class MainWindow(QMainWindow):
 
     def add_chat_message(self, role: str, message: str, add_to_internal_history: bool = True):
         # Adds a message to the chat display with role-based formatting
+        # (No changes needed here)
         role_lower = role.lower(); role_display = role.capitalize()
         prefix_text = f"{role_display}: "; message_text = message.rstrip() + '\n' # Ensure single newline at end
         target_widget = self.chat_history_display; cursor = target_widget.textCursor(); at_end = cursor.atEnd()
         cursor.movePosition(QTextCursor.MoveOperation.End); target_widget.setTextCursor(cursor)
 
-        current_theme = config.APP_THEME; char_format = QTextCharFormat()
+        current_theme = config.APP_THEME # Still get theme for potential use by other roles
+        char_format = QTextCharFormat()
         default_text_color = target_widget.palette().color(QPalette.ColorRole.Text) # Get default from palette
 
-        # Simplified coloring - Use constants for non-system themes
+        # --- Role Coloring Logic ---
         prefix_color = None
-        message_color = default_text_color # Default to standard text color
+        message_color = default_text_color # Default message color
 
-        if current_theme != "system":
-            if role_lower == 'user':
-                prefix_color = get_color('user', current_theme)
-            elif role_lower == 'model':
-                prefix_color = get_color('model', current_theme) # Model prefix might be styled differently
-                message_color = get_color('model', current_theme) # Model message content color
-            elif role_lower in ['system', 'error', 'help', 'prompt']:
-                 prefix_color = get_color(role_lower, current_theme)
-                 message_color = prefix_color # Usually same color for prefix and message
-            else: # Fallback for unknown roles
-                 prefix_color = get_color('system', current_theme)
-                 message_color = prefix_color
-        else: # System theme - rely on palette (use default for now, could customize later)
-             prefix_color = default_text_color
-             message_color = default_text_color
+        if role_lower == 'user':
+            prefix_color = get_color('user', current_theme)
+        elif role_lower == 'model':
+            prefix_color = get_color('model', current_theme)
+            message_color = get_color('model', current_theme)
+        elif role_lower in ['system', 'error', 'help', 'prompt']:
+            prefix_color = get_color(role_lower, current_theme)
+            message_color = prefix_color
+        else: # Fallback for unknown roles: Use system color
+            prefix_color = get_color('system', current_theme)
+            message_color = prefix_color
+        # --- End Role Coloring Logic ---
+
+        if not isinstance(prefix_color, QColor): prefix_color = default_text_color
+        if not isinstance(message_color, QColor): message_color = default_text_color
 
         # Apply Prefix Color
-        char_format.setForeground(prefix_color if prefix_color else default_text_color)
-        # Make prefix bold
+        char_format.setForeground(prefix_color)
         prefix_font = char_format.font(); prefix_font.setBold(True); char_format.setFont(prefix_font)
         cursor.setCharFormat(char_format); cursor.insertText(prefix_text)
 
@@ -638,50 +672,59 @@ class MainWindow(QMainWindow):
 
         # Add to internal history deque if requested
         if add_to_internal_history:
-            # Remove timing info before adding to history
             message_for_history = re.sub(r"\s*\([\u0041-\uFFFF]+:\s*[\d.]+\s*[\u0041-\uFFFF]+\)$", "", message).strip()
-            # Avoid adding exact duplicates consecutively
             if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
                 self.conversation_history.append((role, message_for_history))
 
     def add_cli_output(self, message_bytes: bytes, message_type: str = "output"):
         # Adds decoded output from worker threads to the CLI display
-        message = _decode_output(message_bytes); # Decode using helper
-        message_to_display = message; current_theme = config.APP_THEME
+        # (No changes needed here, platform check for CLIXML remains relevant)
+        decoded_message = _decode_output(message_bytes);
+        message_to_display = decoded_message
+        current_theme = config.APP_THEME
 
-        # Basic filter for CLIXML progress messages (often sent to stderr)
-        is_clixml = message.strip().startswith("#< CLIXML")
-        if is_clixml: print("Filtered CLIXML output."); return
+        # Filter CLIXML (Windows specific)
+        is_clixml = False
+        if platform.system() == "Windows" and decoded_message.strip().startswith("#< CLIXML"):
+             is_clixml = True
+        if is_clixml: return
 
-        # Prepend stderr tag if it's an error and not CLIXML
-        if message_type == "error": message_to_display = f"[stderr] {message}"
-
-        # Determine color based on message type and theme
+        # Determine Color
         color = None
-        if current_theme != "system":
-            color_key = f"cli_{message_type}" # e.g., cli_output, cli_error
-            # Add specific handling for command echoes if needed
-            if message_type == "cli_cmd_echo": color_key = "cli_cmd_echo"
-            elif message_type == "ai_cmd_echo": color_key = "ai_cmd_echo"
-            elif message_type == "system": color_key = "system" # System message in CLI
-            color = get_color(color_key, current_theme)
+        is_model_echo = decoded_message.strip().startswith("Model:")
 
-        text_to_insert = message_to_display.rstrip() + '\n' # Ensure single newline
+        if is_model_echo:
+            color = get_color('model', current_theme)
+        elif message_type == "error":
+            message_to_display = f"[stderr] {decoded_message}"
+            if current_theme != "system":
+                color = get_color('cli_error', current_theme)
+        elif message_type == "cli_cmd_echo":
+            if current_theme != "system":
+                color = get_color('cli_cmd_echo', current_theme)
+        elif message_type == "system":
+            if current_theme != "system":
+                color = get_color('system', current_theme)
+        elif current_theme != "system":
+             color = get_color('cli_output', current_theme)
+
+        # Add Formatted Text
+        text_to_insert = message_to_display.rstrip() + '\n'
         self.add_formatted_text(self.cli_output_display, text_to_insert, color)
 
     def show_help(self):
         # Displays help text in the chat window
+        # (Updated to reflect Windows-only context, e.g., always PowerShell, always 'cls')
         help_title = f"--- {APP_NAME} 帮助 ---"; available_commands = "可用命令 (在聊天输入框输入):"; cmd_help = "/help          显示此帮助信息。"
         cmd_mode = f"/mode [suggest] 设置 AI 命令模式。当前: '{self.current_mode}'。"; mode_explanation = "              suggest: AI 在 <cmd> 标签中提出命令, 然后执行。"
         cmd_clear = "/clear         清除聊天显示和历史记录 (同 '清除聊天' 按钮)。"; cmd_clear_cli = "/clear_cli     清除命令行输出显示。"; cmd_clear_all = "/clear_all     清除两个显示区域及聊天历史。"
         cmd_settings = "/settings      打开应用程序设置对话框 (API密钥, 主题等)。"; cmd_save = "/save          手动保存状态 (聊天历史, 当前目录)。重启时自动加载。"
         cmd_cwd = "/cwd           在聊天中显示完整当前工作目录。"; cmd_exit = "/exit          关闭应用程序。"
         gui_elements = "界面元素:"; gui_toolbar = f"- 工具栏: 设置按钮, 当前目录 (短路径), 模型 ID ({config.MODEL_ID or 'N/A'}), 当前模式, 状态指示灯 (绿:空闲, 红:忙碌)。"; gui_clear_btn = "- 清除聊天按钮: 清除聊天显示和历史记录。"; gui_send_btn = "- 发送按钮: 发送消息给 AI。"
-        manual_commands_title = "手动命令 (在命令行输入框输入):"; shell_name = "PowerShell" if platform.system() == "Windows" else "Shell";
-        # Get current prompt text for example
-        example_prompt = self.cli_prompt_label.text() if self.cli_prompt_label else ("PS C:\\Path>" if platform.system() == "Windows" else "$ /path>")
+        manual_commands_title = "手动命令 (在命令行输入框输入):"; shell_name = "PowerShell"; # Assume PowerShell on Windows
+        example_prompt = self.cli_prompt_label.text() if self.cli_prompt_label else "PS C:\\Path>" # Windows Example
         manual_desc1 = f" - 直接在 {shell_name} 输入框 (形如 {example_prompt}) 输入并按回车。"
-        manual_desc2 = f" - 使用 ↑ / ↓ 键浏览已输入的命令历史。"; manual_desc3 = f" - 标准 {shell_name} 命令可用 (例如 'Get-ChildItem', 'cd ..', 'echo hello', 'python script.py')。"; manual_desc4 = " - 使用 'cd <目录>' 更改工作目录。支持相对/绝对路径和 '~' (用户主目录)。"; manual_desc5 = f" - 使用 '{'cls' if platform.system() == 'Windows' else 'clear'}' 清空命令行输出显示。"
+        manual_desc2 = f" - 使用 ↑ / ↓ 键浏览已输入的命令历史。"; manual_desc3 = f" - 标准 {shell_name} 命令可用 (例如 'Get-ChildItem', 'cd ..', 'echo hello', 'python script.py')。"; manual_desc4 = " - 使用 'cd <目录>' 更改工作目录。支持相对/绝对路径和 '~' (用户主目录)。"; manual_desc5 = f" - 使用 'cls' 或 'clear' 清空命令行输出显示。" # Mention both cls and clear
         ai_interaction_title = "AI 交互 (在聊天输入框输入):"; ai_desc1 = " - 向 AI 请求任务帮助 (例如 “列出当前目录的 python 文件”, “显示 git 状态”, “创建一个名为 temp 的目录”)" ; ai_desc2 = f" - 在 '{self.current_mode}' 模式下, 如果 AI 通过 <cmd>标签</cmd> 建议命令, 它将在命令行窗口中自动回显并执行。"; ai_desc3 = " - 如果 AI 的响应不包含 <cmd> 标签, 则仅在聊天窗口显示文本回复。"; timing_info = " - 模型回复后会附带本次请求的耗时信息。"
         help_text = f"{help_title}\n\n{available_commands}\n {cmd_help}\n {cmd_mode}\n{mode_explanation}\n {cmd_clear}\n {cmd_clear_cli}\n {cmd_clear_all}\n {cmd_settings}\n {cmd_save}\n {cmd_cwd}\n {cmd_exit}\n\n{gui_elements}\n {gui_toolbar}\n {gui_clear_btn}\n {gui_send_btn}\n\n{manual_commands_title}\n{manual_desc1}\n{manual_desc2}\n{manual_desc3}\n{manual_desc4}\n{manual_desc5}\n\n{ai_interaction_title}\n{ai_desc1}\n{ai_desc2}\n{ai_desc3}\n{timing_info}\n"
         self.add_chat_message("Help", help_text, add_to_internal_history=False) # Don't add help to history
@@ -691,6 +734,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def handle_send_message(self):
         # Handles sending a message from the chat input to the AI
+        # (No changes needed here)
         user_prompt = self.chat_input.toPlainText().strip()
         if not user_prompt: return;
         self.chat_input.clear() # Clear input after getting text
@@ -730,6 +774,7 @@ class MainWindow(QMainWindow):
 
     def handle_slash_command(self, command):
         # Processes slash commands entered in the chat input
+        # (No changes needed here)
         command_lower = command.lower(); parts = command.split(maxsplit=1); cmd_base = parts[0].lower(); arg = parts[1].strip() if len(parts) == 2 else None
         print(f"Processing slash command: {command}")
 
@@ -761,6 +806,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def handle_clear_chat(self):
         # Clears the chat display and internal history deque
+        # (No changes needed here)
         print("Clear Chat action triggered.")
         self.chat_history_display.clear(); self.conversation_history.clear()
         # Add a notification message, but don't add it to the (now empty) history
@@ -781,16 +827,24 @@ class MainWindow(QMainWindow):
         self.cli_history_index = -1 # Reset history navigation index
         self.cli_input.clear() # Clear input field
 
-        # Intercept 'cls' or 'clear' locally for faster clearing
-        command_lower = command.lower(); clear_cmd = "cls" if platform.system() == "Windows" else "clear"
-        if command_lower == clear_cmd:
-            print(f"Intercepted '{command}' command. Clearing CLI display directly."); self.cli_output_display.clear(); self.add_cli_output(f"命令行显示已清除。当前目录: {self.current_directory}".encode(), "system"); return
+        # <<< 修改开始: 拦截 clear/cls 命令 (Windows 专用) >>>
+        # Intercept 'cls' or 'clear' locally for faster clearing on Windows
+        command_lower = command.lower()
+        # Since it's Windows-only, check for both 'cls' and 'clear'
+        if command_lower == "cls" or command_lower == "clear":
+            print(f"Intercepted '{command}' command on Windows. Clearing CLI display directly.")
+            self.cli_output_display.clear()
+            # Optionally add a confirmation message back to the CLI display
+            self.add_cli_output(f"命令行显示已清除。当前目录: {self.current_directory}".encode(), "system")
+            return # Prevent sending the command to the worker thread
+        # <<< 修改结束 >>>
 
         # Stop any previous manual command worker if running
         self.stop_manual_worker();
 
         # Echo the command to the CLI output
-        prompt_text = self.cli_prompt_label.text() if self.cli_prompt_label else "> "
+        # Use the already formatted prompt text (which has uppercase drive if applicable)
+        prompt_text = self.cli_prompt_label.text() if self.cli_prompt_label else "PS> " # Assume PS prompt
         self.add_cli_output(f"{prompt_text}{command}".encode(), "cli_cmd_echo") # Encode echo message
 
         # Set UI to busy state BEFORE starting thread
@@ -809,6 +863,7 @@ class MainWindow(QMainWindow):
 
     def keyPressEvent(self, event: QKeySequence):
         # Handles Up/Down arrow keys in CLI input for history navigation
+        # (No changes needed here)
         focused_widget = QApplication.focusWidget()
         if focused_widget == self.cli_input:
             key = event.key(); modifiers = event.modifiers()
@@ -846,6 +901,7 @@ class MainWindow(QMainWindow):
 
     def set_busy_state(self, busy: bool, task_type: str):
         """Updates UI element states (enabled/disabled) and the status indicator."""
+        # (No changes needed here)
         print(f"Setting busy state: {busy} for task type: {task_type}")
 
         # Enable/Disable input widgets based on task type
@@ -881,6 +937,7 @@ class MainWindow(QMainWindow):
     @Slot(str, float)
     def handle_api_result(self, reply: str, elapsed_time: float):
         # Handles the text reply received from the API worker
+        # (No changes needed here)
         time_str = f" (耗时: {elapsed_time:.2f} 秒)"; message_with_time = f"{reply}{time_str}"
         self.add_chat_message("Model", message_with_time)
         # Note: Worker thread will continue to execute command if present.
@@ -889,13 +946,30 @@ class MainWindow(QMainWindow):
     @Slot(str, bool)
     def handle_directory_change(self, new_directory: str, is_manual_command: bool):
         # Handles the signal emitted when a 'cd' command changes the directory
+        # (No changes needed here)
         if os.path.isdir(new_directory):
              old_directory = self.current_directory
-             self.current_directory = os.path.normpath(new_directory)
+             self.current_directory = os.path.normpath(new_directory) # Update internal state
+
+             # Synchronize process working directory
+             try:
+                 os.chdir(self.current_directory) # Attempt to change process CWD
+                 print(f"Process working directory successfully changed to: {self.current_directory}")
+             except Exception as e:
+                 print(f"Error changing process working directory to '{self.current_directory}': {e}")
+                 # Optionally notify user via CLI
+                 error_msg = f"错误: 无法将进程工作目录更改为 '{self.current_directory}': {e}"
+                 self.add_cli_output(error_msg.encode(), "error")
+                 # Consider reverting self.current_directory back to old_directory?
+                 # self.current_directory = old_directory
+                 # print(f"Reverted internal current_directory state to: {self.current_directory}")
+                 # Or just proceed with mismatched state but warn user. Current approach: proceed.
+
+             # Update UI reflecting the new directory (will use uppercase drive if applicable)
              self.update_cwd_label(); # Updates toolbar and CLI prompt
              source = "手动命令" if is_manual_command else "AI 命令"
-             print(f"Directory changed from '{old_directory}' to '{self.current_directory}' via {source}")
-             self.save_state() # Save the new CWD
+             print(f"App directory state changed from '{old_directory}' to '{self.current_directory}' via {source}")
+             self.save_state() # Save the new CWD state (stores original case)
         else:
             print(f"Warning: Directory change received for non-existent path '{new_directory}'")
             error_msg = f"Error: Directory not found: '{new_directory}'"
@@ -904,6 +978,7 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def handle_task_finished(self, task_type: str):
         """Handles the finished signal from worker threads."""
+        # (No changes needed here)
         print(f"{task_type.capitalize()}WorkerThread finished.")
 
         # Clear the reference to the finished thread
@@ -917,6 +992,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def open_settings_dialog(self):
         """Opens the settings configuration dialog."""
+        # (No changes needed here)
         if self.settings_dialog_open: return # Prevent multiple dialogs
         self.settings_dialog_open = True
         print("Opening settings dialog...")
@@ -960,12 +1036,27 @@ class MainWindow(QMainWindow):
 
                 print("Reloading state (necessary after potential reset or theme change)...")
                 self.load_state() # Reload state (might be cleared by reset)
+                # Ensure process CWD matches loaded/reset CWD state
+                try:
+                    if os.path.isdir(self.current_directory):
+                        os.chdir(self.current_directory)
+                        print(f"Process CWD synchronized to loaded/reset state: {self.current_directory}")
+                    else:
+                        print(f"Warning: Loaded/reset directory '{self.current_directory}' not found after settings change. Using fallback CWD.")
+                        self.current_directory = os.getcwd()
+                        os.chdir(self.current_directory) # Ensure process CWD matches fallback
+                        print(f"Using process CWD as fallback: {self.current_directory}")
+                        self.save_state() # Save the fallback CWD state
+                except Exception as e:
+                    print(f"CRITICAL: Error setting process CWD after settings change to '{self.current_directory}': {e}")
+
                 self.load_and_apply_state() # Apply (potentially cleared) history to display
             else: # If only API key etc changed, just update displays
                  # Re-applying styles might still be good if palette colors changed slightly even within same theme name?
                  self.apply_theme_specific_styles() # Re-apply styles just in case
 
             # Update CWD and Prompt display after potential reset or load
+            # This will now reflect the uppercase drive letter if on Windows
             self.update_cwd_label() # Will also update prompt
             print("CWD display updated after settings dialog.")
 
@@ -979,20 +1070,22 @@ class MainWindow(QMainWindow):
     # --- State Management ---
     def save_state(self):
         # Saves conversation history, CWD, CLI history, and splitter state
+        # (No changes needed here)
         try:
             settings = config.get_settings(); history_list = list(self.conversation_history)
-            # Save core state
+            # Save core state (stores original case CWD)
             settings.beginGroup("state"); settings.setValue("conversation_history", json.dumps(history_list)); settings.setValue("current_directory", self.current_directory); settings.setValue("cli_history", json.dumps(list(self.cli_command_history))); settings.endGroup()
             # Save UI state (splitter)
             splitter = self.findChild(QSplitter, "MainSplitter")
             if splitter: settings.beginGroup("ui"); settings.setValue("splitter_state", splitter.saveState()); settings.endGroup()
             settings.sync(); # Ensure changes are written
-            print(f"State saved: History({len(history_list)}), CWD, CLI History({len(self.cli_command_history)})")
+            print(f"State saved: History({len(history_list)}), CWD({self.current_directory}), CLI History({len(self.cli_command_history)})") # Log saved CWD
         except Exception as e: print(f"Error saving state: {e}")
 
 
     def load_state(self):
-        # Loads state on startup
+        # Loads state on startup (doesn't call os.chdir here anymore, handled in __init__)
+        # (No changes needed here)
         print("Loading state (CWD, History, CLI History)...")
         try:
             settings = config.get_settings()
@@ -1005,13 +1098,13 @@ class MainWindow(QMainWindow):
             cli_history_json = settings.value("cli_history", "[]")
             settings.endGroup()
 
-            # Validate saved CWD
+            # Validate saved CWD for internal state
             if saved_cwd and isinstance(saved_cwd, str):
                 if os.path.isdir(saved_cwd): restored_cwd = saved_cwd
-                else: print(f"Warning: Saved directory '{saved_cwd}' not found or invalid. Using default.")
-            else: print("No valid saved directory found. Using default.")
-            self.current_directory = os.path.normpath(restored_cwd)
-            print(f"Effective CWD after loading: {self.current_directory}")
+                else: print(f"Warning: Saved directory '{saved_cwd}' not found or invalid. Using initial directory.")
+            else: print("No valid saved directory found. Using initial directory.")
+            self.current_directory = os.path.normpath(restored_cwd) # Set internal state variable (original case)
+            print(f"Effective internal CWD state after loading: {self.current_directory}") # Process CWD is set in __init__
 
             # Load and validate conversation history
             loaded_history = []
@@ -1035,11 +1128,12 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"CRITICAL Error loading state: {e}. Resetting state variables.")
             self.conversation_history.clear(); self.cli_command_history.clear(); self.cli_history_index = -1
-            self.current_directory = self.initial_directory # Ensure fallback CWD
+            self.current_directory = self.initial_directory # Ensure fallback internal CWD state
 
     # --- Thread Management ---
     def stop_api_worker(self):
         # Stops the API worker thread if running
+        # (No changes needed here)
         if self.api_worker_thread and self.api_worker_thread.isRunning():
             print("Stopping API worker...")
             self.api_worker_thread.stop() # Signal the thread to stop
@@ -1050,6 +1144,7 @@ class MainWindow(QMainWindow):
 
     def stop_manual_worker(self):
         # Stops the manual command worker thread if running
+        # (No changes needed here)
         if self.manual_cmd_thread and self.manual_cmd_thread.isRunning():
             print("Stopping Manual Command worker...")
             self.manual_cmd_thread.stop() # Signal thread and try to terminate process
@@ -1062,6 +1157,7 @@ class MainWindow(QMainWindow):
     # --- Window Close Event ---
     def closeEvent(self, event):
         # Handles the window close event
+        # (No changes needed here)
         print("Close event triggered.")
         # Stop any running background tasks cleanly
         self.stop_api_worker(); self.stop_manual_worker()

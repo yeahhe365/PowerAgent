@@ -7,16 +7,19 @@
 from PySide6.QtGui import QColor
 
 # --- Application Constants ---
-APP_NAME = "PowerAgent"  # <<< MODIFIED
+APP_NAME = "PowerAgent"
 ORG_NAME = "YourOrgName" # Change if desired
-SETTINGS_APP_NAME = "PowerAgent" # <<< MODIFIED - Used for QSettings and auto-start identifiers
+SETTINGS_APP_NAME = "PowerAgent" # Used for QSettings and auto-start identifiers
 
 # --- UI Colors (Static Definitions) ---
 
 # Dark Theme Colors
 _DARK = {
-    "user": QColor("cyan"),
-    "model": QColor("yellow"),
+    # ============================================================= #
+    # <<< User 改为绿色，Model 改为浅蓝色 >>>
+    "user": QColor(144, 238, 144),  # LightGreen
+    "model": QColor(173, 216, 230), # lightblue
+    # ============================================================= #
     "system": QColor("lightGray"),
     "error": QColor("red"),
     "help": QColor(173, 216, 230), # lightblue
@@ -25,11 +28,7 @@ _DARK = {
     "cli_cmd_echo": QColor(173, 216, 230), # lightblue
     "cli_output": QColor("white"),
     "cli_error": QColor(255, 100, 100), # light red
-    # ============================================================= #
-    # <<< 修改这里: 将 CLI 背景色从深蓝色改为深灰色 >>>
-    # 原来的值: QColor(1, 36, 86), # dark blue
-    "cli_bg": QColor(40, 40, 40), # dark gray (changed from blue)
-    # ============================================================= #
+    "cli_bg": QColor(40, 40, 40), # dark gray
     "status_label": QColor("lightgrey"),
     "cwd_label": QColor("lightgrey"),
     "border": QColor(60, 60, 60),
@@ -38,8 +37,11 @@ _DARK = {
 
 # Light Theme Colors
 _LIGHT = {
-    "user": QColor(0, 100, 150),      # Dark Blue/Teal
-    "model": QColor(0, 128, 0),       # Dark Green
+    # ============================================================= #
+    # <<< User 改为绿色，Model 改为浅蓝色 (选择对比度合适的颜色) >>>
+    "user": QColor("green"),          # Dark Green for contrast
+    "model": QColor("blue"),          # Blue for contrast
+    # ============================================================= #
     "system": QColor(80, 80, 80),     # Darker Gray for better contrast
     "error": QColor(200, 0, 0),       # Dark Red
     "help": QColor(0, 0, 150),        # Dark Blue
@@ -55,7 +57,6 @@ _LIGHT = {
     "text_main": QColor(0, 0, 0),
 }
 
-# <<< GUI OPTIMIZATION: Central function to get theme-specific colors >>>
 def get_color(color_name: str, theme: str = "dark") -> QColor:
     """
     Gets the QColor for a specific element based on the current theme.
@@ -70,6 +71,3 @@ def get_color(color_name: str, theme: str = "dark") -> QColor:
     theme_dict = _LIGHT if theme == "light" else _DARK
     default_color = _LIGHT.get("text_main") if theme == "light" else _DARK.get("text_main", QColor("white"))
     return theme_dict.get(color_name, default_color)
-
-# No more dynamic global color variables here.
-# UI elements will call get_color() when they need a color.

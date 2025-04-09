@@ -13,7 +13,9 @@ import subprocess
 import platform
 import base64
 import locale # Import locale to help guess system encoding if needed
-from PySide6.QtCore import QThread, Signal
+# <<< MODIFICATION START: Added QObject to the import >>>
+from PySide6.QtCore import QThread, Signal, QObject
+# <<< MODIFICATION END >>>
 from requests.adapters import HTTPAdapter
 try:
     from urllib3.util.retry import Retry
@@ -69,13 +71,11 @@ def _decode_output(output_bytes: bytes) -> str:
 
 # For AI Interaction
 class ApiWorkerThread(QThread):
-    # <<< MODIFIED: Signals emit bytes >>>
     api_result = Signal(str, float)
     cli_output_signal = Signal(bytes)
     cli_error_signal = Signal(bytes)
     directory_changed_signal = Signal(str, bool)
     task_finished = Signal()
-    # <<< END MODIFIED >>>
 
     def __init__(self, api_key, api_url, model_id, history, prompt, mode, cwd):
         super().__init__()
@@ -114,7 +114,6 @@ class ApiWorkerThread(QThread):
                 else: print("No <cmd> tag found or tag was empty in AI reply."); command_to_run = None
             except Exception as e:
                 print(f"Error parsing command tag: {e}")
-                # <<< MODIFIED: Emit encoded error string >>>
                 if self._is_running: self.cli_error_signal.emit(f"Error parsing command tag: {e}".encode('utf-8'))
         else: print("AI reply was empty.")
 
@@ -179,9 +178,12 @@ class ApiWorkerThread(QThread):
         """Executes the given command in a subprocess using PowerShell on Windows, capturing raw bytes."""
         if not self._is_running: print("Command execution skipped: Worker stopped."); return
 
-        exec_prefix = "PS>"
-        # <<< MODIFIED: Emit encoded status message >>>
-        if self._is_running: self.cli_output_signal.emit(f"AI Executing: {exec_prefix} {command}".encode('utf-8'))
+        # Determine shell prefix based on OS for display
+        exec_prefix = "PS>" if platform.system() == "Windows" else "$>"
+        # <<< MODIFICATION: Changed "AI Executing" to "Model" >>>
+        status_message = f"Model: {exec_prefix} {command}"
+        if self._is_running:
+            self.cli_output_signal.emit(status_message.encode('utf-8'))
 
         if command.strip().lower().startswith('cd '):
             # --- cd command handling ---
@@ -198,11 +200,9 @@ class ApiWorkerThread(QThread):
                     self._cwd = target_dir
                     if self._is_running: self.directory_changed_signal.emit(self._cwd, False) # This signal is str
                 else:
-                    # <<< MODIFIED: Emit encoded error message >>>
                     error_msg = f"Error: Directory not found: '{target_dir}' (Resolved from '{path_part}')"
                     if self._is_running: self.cli_error_signal.emit(error_msg.encode('utf-8'))
             except Exception as e:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 error_msg = f"Error processing 'cd' command: {e}"
                 if self._is_running: self.cli_error_signal.emit(error_msg.encode('utf-8'))
                 self._cwd = original_dir # Should revert CWD on error? Probably not needed as it wasn't changed.
@@ -211,15 +211,25 @@ class ApiWorkerThread(QThread):
             # --- Subprocess execution ---
             try:
                 run_args = None; use_shell = False; creationflags = 0
-                ps_command_safe = f"try {{ {command} }} catch {{ Write-Error $_; exit 1 }}"
-                try:
-                    encoded_bytes = ps_command_safe.encode('utf-16le'); encoded_ps_command = base64.b64encode(encoded_bytes).decode('ascii')
-                    run_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded_ps_command]
-                    use_shell = False; creationflags = subprocess.CREATE_NO_WINDOW
-                except Exception as encode_err:
-                     # <<< MODIFIED: Emit encoded error message >>>
-                    if self._is_running: self.cli_error_signal.emit(f"Error encoding command for PowerShell: {encode_err}".encode('utf-8'))
-                    return
+                # Prepare command based on OS
+                if platform.system() == "Windows":
+                    # Use PowerShell with Base64 encoding for safety
+                    ps_command_safe = f"try {{ {command} }} catch {{ Write-Error $_; exit 1 }}"
+                    try:
+                        # <<< CHANGE START: Redirect PowerShell progress stream to null >>>
+                        # $ProgressPreference = 'SilentlyContinue' affects the current scope
+                        ps_command_safe_no_progress = f"$ProgressPreference = 'SilentlyContinue'; try {{ {command} }} catch {{ Write-Error $_; exit 1 }}"
+                        encoded_bytes = ps_command_safe_no_progress.encode('utf-16le'); encoded_ps_command = base64.b64encode(encoded_bytes).decode('ascii')
+                        # <<< CHANGE END >>>
+                        run_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded_ps_command]
+                        use_shell = False; creationflags = subprocess.CREATE_NO_WINDOW
+                    except Exception as encode_err:
+                         if self._is_running: self.cli_error_signal.emit(f"Error encoding command for PowerShell: {encode_err}".encode('utf-8'))
+                         return
+                else: # Linux/macOS - use default shell
+                    run_args = command # Pass command string directly to shell
+                    use_shell = True
+                    creationflags = 0 # Not applicable
 
                 if run_args is None: return
                 print(f"Executing in CWD '{self._cwd}': {run_args}")
@@ -227,42 +237,43 @@ class ApiWorkerThread(QThread):
 
                 if not self._is_running: print("Command execution finished, but worker was stopped."); return
 
-                # <<< MODIFIED: Emit raw stdout bytes >>>
                 if result.stdout and self._is_running:
                     self.cli_output_signal.emit(result.stdout)
 
-                 # <<< MODIFIED: Emit raw stderr bytes (after potential filtering) >>>
+                # <<< CHANGE START: Filter stderr bytes for CLIXML before emitting >>>
                 stderr_bytes = result.stderr
                 if stderr_bytes and self._is_running:
-                    # Basic CLIXML check on bytes before emitting
-                    try:
-                        # Quick check if it *starts* like CLIXML (might not be perfect)
-                        if not stderr_bytes.strip().startswith(b"#< CLIXML"):
-                             self.cli_error_signal.emit(stderr_bytes)
-                        else:
-                             print("Filtered potential CLIXML progress message from stderr bytes.")
-                    except Exception: # If decoding for check fails, emit raw anyway
-                         self.cli_error_signal.emit(stderr_bytes)
+                    is_clixml = False
+                    if platform.system() == "Windows":
+                        try:
+                            # Basic check on bytes before emitting
+                            if stderr_bytes.strip().startswith(b"#< CLIXML"):
+                                is_clixml = True
+                                print("Filtered CLIXML progress message from stderr bytes (API Worker).")
+                        except Exception: pass # Ignore decoding errors for this check
 
+                    if not is_clixml:
+                        self.cli_error_signal.emit(stderr_bytes)
+                # <<< CHANGE END >>>
 
                 print(f"Command '{command}' finished with exit code: {result.returncode}")
+                # Append exit code message only if non-zero AND stderr wasn't already emitted (or was filtered)
                 if result.returncode != 0 and self._is_running:
-                     # <<< MODIFIED: Emit encoded error message >>>
-                     # Check if stderr likely contained the error already by decoding for comparison
-                     stderr_str_for_check = _decode_output(stderr_bytes) if stderr_bytes else ""
-                     if not stderr_str_for_check or str(result.returncode) not in stderr_str_for_check:
+                     # Check if we emitted *any* non-clixml stderr
+                     emitted_stderr = stderr_bytes and not is_clixml
+                     # Decode emitted stderr to check if return code is already present
+                     stderr_str_for_check = _decode_output(stderr_bytes) if emitted_stderr else ""
+                     if not emitted_stderr or str(result.returncode) not in stderr_str_for_check:
                          self.cli_error_signal.emit(f"Command exited with code: {result.returncode}".encode('utf-8'))
 
+
             except subprocess.TimeoutExpired:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 if self._is_running: self.cli_error_signal.emit(f"Error: Command '{command}' timed out after 120 seconds.".encode('utf-8'))
             except FileNotFoundError:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 if self._is_running:
-                    cmd_name = run_args[0] if isinstance(run_args, list) else command.split()[0]
+                    cmd_name = run_args[0] if isinstance(run_args, list) and platform.system() == "Windows" else command.split()[0]
                     self.cli_error_signal.emit(f"Error: Command not found: '{cmd_name}'. Check PATH or command spelling.".encode('utf-8'))
             except Exception as e:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 if self._is_running:
                     import traceback; traceback.print_exc()
                     self.cli_error_signal.emit(f"Error executing command '{command}': {type(e).__name__} - {e}".encode('utf-8'))
@@ -271,12 +282,10 @@ class ApiWorkerThread(QThread):
 
 # For Manual Command Execution
 class ManualCommandThread(QThread):
-    # <<< MODIFIED: Signals emit bytes >>>
     cli_output_signal = Signal(bytes)
     cli_error_signal = Signal(bytes)
     directory_changed_signal = Signal(str, bool)
     command_finished = Signal()
-    # <<< END MODIFIED >>>
 
     def __init__(self, command, cwd):
         super().__init__()
@@ -292,11 +301,36 @@ class ManualCommandThread(QThread):
         if self._process and self._process.poll() is None:
             print("Attempting to terminate manual command process...")
             try:
-                self._process.terminate(); self._process.wait(timeout=1); print("Process terminated.")
-            except subprocess.TimeoutExpired: print("Process kill..."); self._process.kill(); print("Process killed.")
-            except ProcessLookupError: print("Process already terminated.")
-            except Exception as e: print(f"Error terminating process: {e}")
+                if platform.system() == "Windows":
+                    # Graceful termination first
+                    subprocess.run(['taskkill', '/PID', str(self._process.pid), '/T'], check=False, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                    self._process.terminate() # Fallback
+                else:
+                    import signal
+                    os.killpg(os.getpgid(self._process.pid), signal.SIGTERM) # Send TERM to process group
+                    self._process.terminate() # Fallback for main process
+                self._process.wait(timeout=1) # Wait briefly for termination
+                print("Process terminated.")
+            except subprocess.TimeoutExpired:
+                print("Process termination timed out, attempting kill...")
+                try:
+                    if platform.system() == "Windows":
+                         subprocess.run(['taskkill', '/PID', str(self._process.pid), '/T', '/F'], check=False, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                         self._process.kill() # Fallback
+                    else:
+                        import signal
+                        os.killpg(os.getpgid(self._process.pid), signal.SIGKILL) # Send KILL to process group
+                        self._process.kill() # Fallback for main process
+                    self._process.wait(timeout=1) # Wait after kill
+                    print("Process killed.")
+                except Exception as kill_err:
+                    print(f"Error during process kill: {kill_err}")
+            except ProcessLookupError:
+                print("Process already terminated.")
+            except Exception as e:
+                print(f"Error terminating/killing process: {e}")
         self._process = None
+
 
     def run(self):
         if not self._is_running: return
@@ -312,104 +346,236 @@ class ManualCommandThread(QThread):
                 path_part = command.strip()[3:].strip()
                 if not path_part or path_part == '~': target_dir = os.path.expanduser("~")
                 else:
-                    if (path_part.startswith('"') and path_part.endswith('"')) or \
-                       (path_part.startswith("'") and path_part.endswith("'")): path_part = path_part[1:-1]
-                    target_dir = os.path.expanduser(path_part)
-                    if not os.path.isabs(target_dir): target_dir = os.path.abspath(os.path.join(self._cwd, target_dir))
+                    # Remove outer quotes if present (handle both ' and ")
+                    if len(path_part) >= 2 and path_part[0] == path_part[-1] and path_part[0] in ('"', "'"):
+                        path_part = path_part[1:-1]
+                    target_dir = os.path.expanduser(path_part) # Handles ~ within paths too
+                    # Resolve relative paths based on current worker directory
+                    if not os.path.isabs(target_dir):
+                        target_dir = os.path.abspath(os.path.join(self._cwd, target_dir))
+
+                # Normalize the path for comparison and storage
+                target_dir = os.path.normpath(target_dir)
+
                 if os.path.isdir(target_dir):
-                    self._cwd = target_dir
-                    if self._is_running: self.directory_changed_signal.emit(self._cwd, True) # This signal is str
+                    self._cwd = target_dir # Update worker's CWD
+                    if self._is_running: self.directory_changed_signal.emit(self._cwd, True) # Emit signal with True for manual
                 else:
-                    # <<< MODIFIED: Emit encoded error message >>>
                     error_msg = f"Error: Directory not found: '{target_dir}' (Resolved from '{path_part}')"
                     if self._is_running: self.cli_error_signal.emit(error_msg.encode('utf-8'))
             except Exception as e:
-                # <<< MODIFIED: Emit encoded error message >>>
                 error_msg = f"Error processing 'cd' command: {e}"
                 if self._is_running: self.cli_error_signal.emit(error_msg.encode('utf-8'))
              # --- End of cd handling ---
         else:
             # --- Subprocess execution ---
+            stdout_thread = None # Define outside try block
+            stderr_thread = None # Define outside try block
+            stderr_lines = [] # Accumulate all stderr bytes for final check
             try:
                 run_args = None; use_shell = False; creationflags = 0
-                ps_command_safe = f"try {{ {command} }} catch {{ Write-Error $_; exit 1 }}"
-                try:
-                    encoded_bytes = ps_command_safe.encode('utf-16le'); encoded_ps_command = base64.b64encode(encoded_bytes).decode('ascii')
-                    run_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded_ps_command]
-                    use_shell = False; creationflags = subprocess.CREATE_NO_WINDOW
-                except Exception as encode_err:
-                    # <<< MODIFIED: Emit encoded error message >>>
-                    if self._is_running: self.cli_error_signal.emit(f"Error encoding command for PowerShell: {encode_err}".encode('utf-8'))
+                stdout_pipe = subprocess.PIPE; stderr_pipe = subprocess.PIPE
+                preexec_fn = None # For setting process group on Unix
+
+                if platform.system() == "Windows":
+                    # <<< CHANGE START: Redirect PowerShell progress stream to null >>>
+                    ps_command_safe_no_progress = f"$ProgressPreference = 'SilentlyContinue'; try {{ {command} }} catch {{ Write-Error $_; exit 1 }}"
+                    try:
+                        encoded_bytes = ps_command_safe_no_progress.encode('utf-16le'); encoded_ps_command = base64.b64encode(encoded_bytes).decode('ascii')
+                        run_args = ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", encoded_ps_command]
+                        use_shell = False; creationflags = subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP
+                    except Exception as encode_err:
+                        if self._is_running: self.cli_error_signal.emit(f"Error encoding command for PowerShell: {encode_err}".encode('utf-8'))
+                        if self._is_running: self.command_finished.emit()
+                        return
+                    # <<< CHANGE END >>>
+                else: # Linux/macOS
+                    shell_path = os.environ.get("SHELL", "/bin/sh")
+                    run_args = [shell_path, "-c", command] # Execute command within the shell
+                    use_shell = False # We are explicitly calling the shell
+                    creationflags = 0
+                    preexec_fn = os.setsid # Create new session and process group
+
+                if run_args is None:
                     if self._is_running: self.command_finished.emit()
                     return
 
-                if run_args is None: return
                 print(f"Executing manually in CWD '{self._cwd}': {run_args}")
                 # Use Popen for streaming
-                self._process = subprocess.Popen( run_args, shell=use_shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self._cwd, creationflags=creationflags, bufsize=1 ) # bufsize=1 might cause warning but helps streaming
+                self._process = subprocess.Popen(
+                    run_args,
+                    shell=use_shell,
+                    stdout=stdout_pipe,
+                    stderr=stderr_pipe,
+                    cwd=self._cwd,
+                    creationflags=creationflags,
+                    bufsize=0, # Use 0 for unbuffered binary IO with os.read
+                    preexec_fn=preexec_fn # Set process group on Unix
+                )
 
-                # Stream and emit stdout bytes
-                if self._process.stdout:
-                    for line_bytes in iter(self._process.stdout.readline, b''):
-                        if not self._is_running: break
-                        # <<< MODIFIED: Emit raw line_bytes >>>
-                        if line_bytes and self._is_running:
-                             self.cli_output_signal.emit(line_bytes)
-                    if self._process and self._process.stdout: self._process.stdout.close()
-
-                # Stream and accumulate stderr bytes
-                stderr_full_output = b""
-                if self._process and self._process.stderr:
-                    for line_bytes in iter(self._process.stderr.readline, b''):
-                        if not self._is_running: break
-                        stderr_full_output += line_bytes
-                    if self._process and self._process.stderr: self._process.stderr.close()
-
-                # Emit accumulated stderr bytes (after potential filtering)
-                if stderr_full_output and self._is_running:
-                     # <<< MODIFIED: Emit raw stderr_full_output bytes (after potential filtering) >>>
-                    try:
-                        # Basic CLIXML check on bytes before emitting
-                        if not stderr_full_output.strip().startswith(b"#< CLIXML"):
-                             self.cli_error_signal.emit(stderr_full_output)
-                        else:
-                             print("Filtered potential CLIXML progress message from stderr bytes (manual command).")
-                    except Exception:
-                         self.cli_error_signal.emit(stderr_full_output)
-
-
-                if not self._is_running: print("Manual command worker stopped before wait()."); self.stop(); return
-
+                # --- Stream Output ---
                 if self._process:
-                    return_code = self._process.wait()
+                    # Define functions to read streams and emit signals
+                    def read_stream(stream, signal_emitter):
+                         try:
+                              # Use os.read for potentially better responsiveness than readline
+                              while self._is_running:
+                                  try:
+                                      # Read a chunk (adjust size as needed)
+                                      chunk = os.read(stream.fileno(), 1024)
+                                      if not chunk: break # End of stream
+                                      if self._is_running:
+                                          signal_emitter(chunk)
+                                  except OSError as e: # Handle potential errors like closed pipe
+                                       # print(f"Read error on stream {stream.fileno()}: {e}") # Reduce noise
+                                       break
+                                  except ValueError as e: # Handle "negative file descriptor" after close
+                                       # print(f"Stream {stream.fileno()} likely closed: {e}") # Reduce noise
+                                       break
+                         except Exception as e: # Catch other potential errors
+                              print(f"Error in read_stream loop for {stream.fileno()}: {e}")
+                         finally:
+                              try:
+                                   stream.close()
+                              except Exception: pass
+
+                    # Need a worker object for the thread
+                    class StreamWorker(QObject): # QObject used here
+                         def __init__(self, func, *args): super().__init__(); self.func=func; self.args=args
+                         finished = Signal() # Define signal for clean thread exit coordination
+                         def run(self):
+                             try:
+                                 self.func(*self.args)
+                             finally:
+                                 try:
+                                      self.finished.emit() # Signal completion
+                                 except RuntimeError: # Handle case where thread is already quitting
+                                      pass
+
+                    # Start threads to read stdout and stderr concurrently
+                    if self._process.stdout:
+                         stdout_thread = QThread()
+                         stdout_worker = StreamWorker(read_stream, self._process.stdout, self.cli_output_signal.emit)
+                         stdout_worker.moveToThread(stdout_thread)
+                         stdout_worker.finished.connect(stdout_thread.quit)
+                         stdout_worker.finished.connect(stdout_worker.deleteLater) # Cleanup worker
+                         stdout_thread.finished.connect(stdout_thread.deleteLater) # Cleanup thread
+                         stdout_thread.started.connect(stdout_worker.run)
+                         stdout_thread.start()
+
+                    # <<< CHANGE START: Modify read_stderr to filter CLIXML before emitting >>>
+                    def read_stderr(stream, signal_emitter, line_list):
+                         try:
+                            while self._is_running:
+                                try:
+                                    chunk = os.read(stream.fileno(), 1024)
+                                    if not chunk: break
+                                    if self._is_running:
+                                        # Always append the raw chunk for later analysis
+                                        line_list.append(chunk)
+
+                                        # Filter CLIXML before emitting the signal
+                                        is_clixml = False
+                                        if platform.system() == "Windows":
+                                            try:
+                                                # Check if the chunk contains the CLIXML marker
+                                                if b"#< CLIXML" in chunk.strip():
+                                                    is_clixml = True
+                                                    # print("Filtered potential CLIXML chunk signal emission (Manual Worker).") # Reduce noise
+                                            except Exception: pass # Ignore errors during check
+
+                                        if not is_clixml:
+                                            signal_emitter(chunk) # Emit only non-CLIXML chunks
+
+                                except OSError as e:
+                                     # print(f"Read error on stderr stream {stream.fileno()}: {e}") # Reduce noise
+                                     break
+                                except ValueError as e:
+                                     # print(f"Stderr stream {stream.fileno()} likely closed: {e}") # Reduce noise
+                                     break
+                         except Exception as e:
+                             print(f"Error in read_stderr loop for {stream.fileno()}: {e}")
+                         finally:
+                              try:
+                                   stream.close()
+                              except Exception: pass
+                    # <<< CHANGE END >>>
+
+                    if self._process.stderr:
+                         stderr_thread = QThread()
+                         stderr_worker = StreamWorker(read_stderr, self._process.stderr, self.cli_error_signal.emit, stderr_lines)
+                         stderr_worker.moveToThread(stderr_thread)
+                         stderr_worker.finished.connect(stderr_thread.quit)
+                         stderr_worker.finished.connect(stderr_worker.deleteLater)
+                         stderr_thread.finished.connect(stderr_thread.deleteLater)
+                         stderr_thread.started.connect(stderr_worker.run)
+                         stderr_thread.start()
+
+                    # Wait for process and stream threads to finish
+                    process_return_code = None
+                    if self._process:
+                        try:
+                             # Wait indefinitely or until stop() is called
+                             while self._process.poll() is None and self._is_running:
+                                  QThread.msleep(50) # Use Qt's sleep to yield event loop
+                             if self._is_running: # Process finished naturally
+                                 process_return_code = self._process.poll() # Get final code
+                             else: # If stop() was called
+                                 process_return_code = self._process.poll() # Get code if it exited quickly after stop
+                                 print("Process poll after stop signal.")
+                        except Exception as wait_err:
+                             print(f"Error waiting for process: {wait_err}")
+
+                    # Ensure threads finish cleanly AFTER process wait
+                    if stdout_thread: stdout_thread.quit(); stdout_thread.wait(500) # Add timeout
+                    if stderr_thread: stderr_thread.quit(); stderr_thread.wait(500) # Add timeout
+                    # --- End Stream Output ---
+
+
                     self._process = None # Clear process reference
-                    print(f"Manual command '{command}' finished with exit code: {return_code}")
-                    if return_code != 0 and self._is_running:
-                         # <<< MODIFIED: Emit encoded error message >>>
-                         # Check if stderr likely contained the error already
-                         stderr_str_for_check = _decode_output(stderr_full_output) if stderr_full_output else ""
-                         if not stderr_str_for_check or str(return_code) not in stderr_str_for_check:
-                            self.cli_error_signal.emit(f"Command exited with code: {return_code}".encode('utf-8'))
-                else: print("Process reference was None before reporting exit code.")
+                    if process_return_code is not None:
+                         print(f"Manual command '{command}' finished with exit code: {process_return_code}")
+                         # Append exit code message only if non-zero AND stderr didn't contain it
+                         if process_return_code != 0 and self._is_running:
+                              stderr_full_output_bytes = b"".join(stderr_lines) # Use accumulated bytes
+                              # Don't decode here, just check if any bytes were accumulated
+                              emitted_any_stderr = bool(stderr_full_output_bytes)
+                              # Decode only for the string check
+                              stderr_str_for_check = _decode_output(stderr_full_output_bytes) if emitted_any_stderr else ""
+
+                              # Add exit code if:
+                              # 1. No stderr was produced OR
+                              # 2. Stderr was produced, but doesn't contain the exit code number
+                              if not emitted_any_stderr or str(process_return_code) not in stderr_str_for_check:
+                                   self.cli_error_signal.emit(f"Command exited with code: {process_return_code}".encode('utf-8'))
+                    elif self._is_running:
+                        # This case might happen if the process was stopped externally
+                        # or Popen failed silently before the loop.
+                         print("Process finished or was stopped without a return code available.")
+                         # Optionally emit a generic error if this state is unexpected
+                         # self.cli_error_signal.emit(f"Command '{command}' ended unexpectedly.".encode('utf-8'))
+
+                else: print("Process reference was None after Popen.")
+
 
             except FileNotFoundError:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 if self._is_running:
                     cmd_name = run_args[0] if isinstance(run_args, list) else command.split()[0]
                     self.cli_error_signal.emit(f"Error: Command not found: '{cmd_name}'. Check PATH or command spelling.".encode('utf-8'))
             except Exception as e:
-                 # <<< MODIFIED: Emit encoded error message >>>
                 if self._is_running:
                     import traceback; traceback.print_exc()
                     self.cli_error_signal.emit(f"Error executing command '{command}': {type(e).__name__} - {e}".encode('utf-8'))
             finally:
-                if self._process: # Ensure cleanup if Popen started but error occurred before wait
-                    try:
-                        if self._process.stdout: self._process.stdout.close()
-                        if self._process.stderr: self._process.stderr.close()
-                        if self._process.poll() is None: self.stop() # Try to stop if still running
-                    except Exception as close_err: print(f"Error closing streams/stopping process during finally block: {close_err}")
-                    self._process = None
+                # Ensure cleanup if Popen started but error occurred before wait/threads finish
+                if self._process and self._process.poll() is None:
+                    if self._is_running: # If error happened but worker not stopped, try stopping now
+                        print("Forcing stop due to error during execution.")
+                        self.stop()
+                # Ensure threads are cleaned up (redundant if already done, but safe)
+                if stdout_thread and stdout_thread.isRunning(): stdout_thread.quit(); stdout_thread.wait(100)
+                if stderr_thread and stderr_thread.isRunning(): stderr_thread.quit(); stderr_thread.wait(100)
+                self._process = None
             # --- End Subprocess execution ---
 
         if self._is_running: self.command_finished.emit()
