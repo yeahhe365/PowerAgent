@@ -1,6 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/stylesheets.py
-# (MODIFIED - Removed CWD Label styling)
+# (MODIFIED - Removed QPushButton:hover styling)
 # ---------------------------------------
 # gui/stylesheets.py
 # -*- coding: utf-8 -*-
@@ -9,7 +9,7 @@
 Contains the QSS stylesheet templates used by the MainWindow.
 """
 
-# Stylesheet template (Removed ToolbarCwdLabel styling)
+# Stylesheet template (Removed QPushButton:hover styling)
 STYLESHEET_TEMPLATE = """
     /* General */
     QMainWindow {{ }}
@@ -22,7 +22,6 @@ STYLESHEET_TEMPLATE = """
         spacing: 5px;
     }}
     /* <<< REMOVED Toolbar CWD Label Styling >>> */
-    /* QToolBar QLabel#ToolbarCwdLabel {{ ... }} */
 
     /* <<< ADDED: Styling for Toolbar ComboBox >>> */
     QToolBar QComboBox#ModelSelectorCombo {{
@@ -118,11 +117,9 @@ STYLESHEET_TEMPLATE = """
         color: {button_text};
         border: 1px solid {border};
     }}
-    QPushButton:hover {{
-        background-color: {highlight_bg};
-        color: {highlighted_text};
-        border: 1px solid {highlight_bg};
-    }}
+    /* <<< REMOVED QPushButton:hover block >>> */
+    /* QPushButton:hover {{ ... }} */
+
     QPushButton:pressed {{
         background-color: {button_pressed_bg};
     }}
@@ -161,16 +158,20 @@ STYLESHEET_TEMPLATE = """
     }}
     /* Specific Button Styling (Placeholders) */
     #ClearChatButton {{ }}
-    #ClearChatButton:hover {{ }}
+    /* <<< REMOVED #ClearChatButton:hover placeholder >>> */
     /* <<< ADDED: Placeholder selectors for the new button >>> */
     #ClearCliButton {{ }}
-    #ClearCliButton:hover {{ }}
+    /* <<< REMOVED #ClearCliButton:hover placeholder >>> */
     #ClearCliButton:pressed {{ }}
     #ClearCliButton:disabled {{ }}
     /* <<< END ADDED >>> */
 """
 
 # Minimal stylesheet (Removed ToolbarCwdLabel font styling)
+# This template already doesn't have a QPushButton:hover rule,
+# so hover effects rely on the base Qt style (Fusion).
+# Removing hover completely from Fusion might require more complex styling or subclassing,
+# but removing it from the custom QSS is achieved by simply not defining it.
 MINIMAL_STYLESHEET_SYSTEM_THEME = """
     #CliOutput, #CliInput, #CliPromptLabel {{
         font-family: {mono_font_family};
@@ -203,7 +204,6 @@ MINIMAL_STYLESHEET_SYSTEM_THEME = """
         padding: 3px;
      }}
     /* <<< REMOVED Toolbar CWD Label Styling >>> */
-    /* QToolBar QLabel#ToolbarCwdLabel {{ ... }} */
 
     /* <<< ADDED: Basic Styling for Toolbar ComboBox in System Theme >>> */
     QToolBar QComboBox#ModelSelectorCombo {{
@@ -227,6 +227,7 @@ MINIMAL_STYLESHEET_SYSTEM_THEME = """
     QPushButton {{
         padding: 5px 10px;
         min-height: 26px;
+        /* No explicit hover rule here - uses style default */
     }}
     QPushButton:disabled {{
         padding: 5px 10px;
