@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/core/config.py
+# (MODIFIED)
 # ---------------------------------------
 # core/config.py
 # -*- coding: utf-8 -*-
@@ -17,7 +18,10 @@ from .autostart import set_auto_startup
 # --- Default Values ---
 DEFAULT_API_KEY: str = ""
 DEFAULT_API_URL: str = ""
-DEFAULT_MODEL_ID: str = ""
+# <<< MODIFIED: Default for comma-separated string >>>
+DEFAULT_MODEL_ID_STRING: str = ""
+DEFAULT_CURRENTLY_SELECTED_MODEL_ID: str = ""
+# <<< END MODIFICATION >>>
 DEFAULT_AUTO_STARTUP_ENABLED: bool = False
 DEFAULT_APP_THEME: str = "system" # Default theme is system
 DEFAULT_INCLUDE_CLI_CONTEXT: bool = True
@@ -30,7 +34,10 @@ DEFAULT_INCLUDE_TIMESTAMP: bool = False # Default to NOT include timestamp
 # Initialize with defaults
 API_KEY: str = DEFAULT_API_KEY
 API_URL: str = DEFAULT_API_URL
-MODEL_ID: str = DEFAULT_MODEL_ID
+# <<< MODIFIED: Global state variables >>>
+MODEL_ID_STRING: str = DEFAULT_MODEL_ID_STRING
+CURRENTLY_SELECTED_MODEL_ID: str = DEFAULT_CURRENTLY_SELECTED_MODEL_ID
+# <<< END MODIFICATION >>>
 AUTO_STARTUP_ENABLED: bool = DEFAULT_AUTO_STARTUP_ENABLED
 APP_THEME: str = DEFAULT_APP_THEME
 INCLUDE_CLI_CONTEXT: bool = DEFAULT_INCLUDE_CLI_CONTEXT
@@ -56,11 +63,10 @@ def load_config() -> tuple[bool, str]:
     Returns:
         tuple: (bool: success, str: message)
     """
-    global API_KEY, API_URL, MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT
-    # <<< MODIFICATION START: Add timestamp global >>>
-    global INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< MODIFICATION END >>>
+    # <<< MODIFIED: Global variable list >>>
+    global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
+    # <<< END MODIFICATION >>>
 
     print("Loading configuration from QSettings (INI format)...")
     settings = get_settings()
@@ -72,7 +78,9 @@ def load_config() -> tuple[bool, str]:
     settings.beginGroup("api")
     API_KEY = settings.value("key", DEFAULT_API_KEY)
     API_URL = settings.value("url", DEFAULT_API_URL)
-    MODEL_ID = settings.value("model_id", DEFAULT_MODEL_ID)
+    # <<< MODIFIED: Load model_id_string >>>
+    MODEL_ID_STRING = settings.value("model_id_string", DEFAULT_MODEL_ID_STRING) # Changed key name
+    # <<< END MODIFICATION >>>
     settings.endGroup()
 
     # Load General settings
@@ -80,6 +88,9 @@ def load_config() -> tuple[bool, str]:
     AUTO_STARTUP_ENABLED = settings.value("auto_startup", DEFAULT_AUTO_STARTUP_ENABLED, type=bool)
     loaded_theme = settings.value("theme", DEFAULT_APP_THEME, type=str)
     INCLUDE_CLI_CONTEXT = settings.value("include_cli_context", DEFAULT_INCLUDE_CLI_CONTEXT, type=bool)
+    # <<< MODIFIED: Load selected model >>>
+    CURRENTLY_SELECTED_MODEL_ID = settings.value("selected_model", DEFAULT_CURRENTLY_SELECTED_MODEL_ID) # New key
+    # <<< END MODIFICATION >>>
     # <<< MODIFICATION START: Load timestamp setting >>>
     INCLUDE_TIMESTAMP_IN_PROMPT = settings.value("include_timestamp", DEFAULT_INCLUDE_TIMESTAMP, type=bool)
     # <<< MODIFICATION END >>>
@@ -93,29 +104,53 @@ def load_config() -> tuple[bool, str]:
     else:
         APP_THEME = loaded_theme
 
+    # <<< MODIFIED: Validate selected model ID against the list >>>
+    # Ensure the loaded selected model is actually in the list of available models
+    available_models = [m.strip() for m in MODEL_ID_STRING.split(',') if m.strip()]
+    if CURRENTLY_SELECTED_MODEL_ID and CURRENTLY_SELECTED_MODEL_ID not in available_models:
+        print(f"Warning: Saved selected model '{CURRENTLY_SELECTED_MODEL_ID}' is not in the available list {available_models}. Resetting selection.")
+        CURRENTLY_SELECTED_MODEL_ID = available_models[0] if available_models else ""
+        # Optionally save this correction back immediately, though update_model_selector in main_window will handle it too.
+        # settings.beginGroup("general")
+        # settings.setValue("selected_model", CURRENTLY_SELECTED_MODEL_ID)
+        # settings.endGroup()
+        # settings.sync()
+    elif not CURRENTLY_SELECTED_MODEL_ID and available_models:
+         # If no model was selected but models are available, select the first one
+         print(f"No model previously selected, defaulting to first available: '{available_models[0]}'")
+         CURRENTLY_SELECTED_MODEL_ID = available_models[0]
+         # Optionally save this default back
+         # settings.beginGroup("general")
+         # settings.setValue("selected_model", CURRENTLY_SELECTED_MODEL_ID)
+         # settings.endGroup()
+         # settings.sync()
+
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Configuration loaded - Theme: {APP_THEME}, AutoStart: {AUTO_STARTUP_ENABLED}, IncludeCLIContext: {INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp: {INCLUDE_TIMESTAMP_IN_PROMPT}")
+    print(f"Configuration loaded - Theme: {APP_THEME}, AutoStart: {AUTO_STARTUP_ENABLED}, IncludeCLIContext: {INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp: {INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel: {CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
-    # Check if API configuration is incomplete
-    if not API_KEY or not API_URL or not MODEL_ID:
-        print("API configuration is incomplete in QSettings.")
-        return False, "API configuration incomplete. Please configure in Settings."
+    # Check if API configuration is incomplete (API Key/URL still needed)
+    if not API_KEY or not API_URL: # Removed MODEL_ID check here, as list might be empty intentionally initially
+        print("API Key/URL configuration is incomplete in QSettings.")
+        return False, "API Key/URL configuration incomplete. Please configure in Settings."
+    if not MODEL_ID_STRING:
+        print("Model ID list is empty. Please configure in Settings to use AI features.")
+        # Return True, but message indicates models needed
+        return True, "Configuration loaded, but Model ID list is empty."
 
     print("Configuration loaded successfully from QSettings.")
     return True, "Configuration loaded successfully."
 
 
-# <<< MODIFICATION START: Add include_timestamp parameter >>>
-def save_config(api_key: str, api_url: str, model_id: str, auto_startup: bool, theme: str,
-                include_cli_context: bool, include_timestamp: bool):
-# <<< MODIFICATION END >>>
+# <<< MODIFIED: Signature changed to accept model_id_string and selected_model_id >>>
+def save_config(api_key: str, api_url: str, model_id_string: str, auto_startup: bool, theme: str,
+                include_cli_context: bool, include_timestamp: bool, selected_model_id: str):
+# <<< END MODIFICATION >>>
     """Saves configuration to QSettings (INI format) and updates globals."""
-    global API_KEY, API_URL, MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT
-    # <<< MODIFICATION START: Add timestamp global >>>
-    global INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< MODIFICATION END >>>
+    # <<< MODIFIED: Global variable list >>>
+    global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
+    # <<< END MODIFICATION >>>
 
     print("Saving configuration to QSettings (INI format)...")
     settings = get_settings()
@@ -123,7 +158,9 @@ def save_config(api_key: str, api_url: str, model_id: str, auto_startup: bool, t
     settings.beginGroup("api")
     settings.setValue("key", api_key)
     settings.setValue("url", api_url)
-    settings.setValue("model_id", model_id)
+    # <<< MODIFIED: Save model_id_string >>>
+    settings.setValue("model_id_string", model_id_string) # Changed key name
+    # <<< END MODIFICATION >>>
     settings.endGroup()
 
     settings.beginGroup("general")
@@ -132,6 +169,9 @@ def save_config(api_key: str, api_url: str, model_id: str, auto_startup: bool, t
     valid_theme = theme if theme in valid_themes else DEFAULT_APP_THEME
     settings.setValue("theme", valid_theme)
     settings.setValue("include_cli_context", include_cli_context)
+    # <<< MODIFIED: Save selected model >>>
+    settings.setValue("selected_model", selected_model_id) # New key
+    # <<< END MODIFICATION >>>
     # <<< MODIFICATION START: Save timestamp setting >>>
     settings.setValue("include_timestamp", include_timestamp)
     # <<< MODIFICATION END >>>
@@ -145,7 +185,11 @@ def save_config(api_key: str, api_url: str, model_id: str, auto_startup: bool, t
         print(f"Settings saved successfully to: {settings.fileName()}")
 
     # Update global variables immediately after saving
-    API_KEY, API_URL, MODEL_ID = api_key, api_url, model_id
+    API_KEY, API_URL = api_key, api_url
+    # <<< MODIFIED: Update globals >>>
+    MODEL_ID_STRING = model_id_string
+    CURRENTLY_SELECTED_MODEL_ID = selected_model_id
+    # <<< END MODIFICATION >>>
     AUTO_STARTUP_ENABLED = auto_startup
     APP_THEME = valid_theme
     INCLUDE_CLI_CONTEXT = include_cli_context
@@ -154,7 +198,7 @@ def save_config(api_key: str, api_url: str, model_id: str, auto_startup: bool, t
     # <<< MODIFICATION END >>>
 
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Config state updated: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}")
+    print(f"Config state updated: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
     # Apply auto-startup change using the saved value
@@ -167,11 +211,10 @@ def reset_to_defaults_and_clear_cache():
     Resets all settings in QSettings to their defaults and clears cached state.
     Also updates the global variables in this module.
     """
-    global API_KEY, API_URL, MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT
-    # <<< MODIFICATION START: Add timestamp global >>>
-    global INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< MODIFICATION END >>>
+    # <<< MODIFIED: Global variable list >>>
+    global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
+    # <<< END MODIFICATION >>>
 
     print("Resetting all settings and clearing cache...")
     settings = get_settings()
@@ -188,7 +231,10 @@ def reset_to_defaults_and_clear_cache():
     # Reset global variables to defaults
     API_KEY = DEFAULT_API_KEY
     API_URL = DEFAULT_API_URL
-    MODEL_ID = DEFAULT_MODEL_ID
+    # <<< MODIFIED: Reset globals >>>
+    MODEL_ID_STRING = DEFAULT_MODEL_ID_STRING
+    CURRENTLY_SELECTED_MODEL_ID = DEFAULT_CURRENTLY_SELECTED_MODEL_ID
+    # <<< END MODIFICATION >>>
     AUTO_STARTUP_ENABLED = DEFAULT_AUTO_STARTUP_ENABLED
     APP_THEME = DEFAULT_APP_THEME
     INCLUDE_CLI_CONTEXT = DEFAULT_INCLUDE_CLI_CONTEXT
@@ -197,7 +243,7 @@ def reset_to_defaults_and_clear_cache():
     # <<< MODIFICATION END >>>
 
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Global config state reset to defaults: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}")
+    print(f"Global config state reset to defaults: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
     # Explicitly disable auto-startup via the platform-specific mechanism
@@ -210,14 +256,15 @@ def reset_to_defaults_and_clear_cache():
 
 def get_current_config() -> dict:
     """Returns the current configuration values held in this module."""
-    # <<< MODIFICATION START: Add timestamp to returned dict >>>
+    # <<< MODIFIED: Return new structure >>>
     return {
         "api_key": API_KEY,
         "api_url": API_URL,
-        "model_id": MODEL_ID,
+        "model_id_string": MODEL_ID_STRING, # Renamed key
+        "currently_selected_model_id": CURRENTLY_SELECTED_MODEL_ID, # Added key
         "auto_startup": AUTO_STARTUP_ENABLED,
         "theme": APP_THEME,
         "include_cli_context": INCLUDE_CLI_CONTEXT,
-        "include_timestamp_in_prompt": INCLUDE_TIMESTAMP_IN_PROMPT, # New key
+        "include_timestamp_in_prompt": INCLUDE_TIMESTAMP_IN_PROMPT, # Timestamp key
     }
-    # <<< MODIFICATION END >>>
+    # <<< END MODIFICATION >>>

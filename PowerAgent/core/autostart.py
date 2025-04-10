@@ -1,3 +1,7 @@
+# ========================================
+# 文件名: PowerAgent/core/autostart.py
+# (No changes needed in this file for this feature)
+# -----------------------------------------------------------------------
 # core/autostart.py
 # -*- coding: utf-8 -*-
 

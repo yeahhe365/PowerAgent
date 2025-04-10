@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/settings_dialog.py
+# (MODIFIED)
 # ---------------------------------------
 # gui/settings_dialog.py
 # -*- coding: utf-8 -*-
@@ -31,7 +32,7 @@ class SettingsDialog(QDialog):
         self.load_initial_values()
 
         # --- Widgets ---
-        # (API Inputs - unchanged creation)
+        # (API Inputs - unchanged creation, except model tooltip and placeholder)
         self.url_input = QLineEdit(self._current_api_url)
         self.url_input.setPlaceholderText("例如: https://api.openai.com")
         self.url_input.setToolTip("输入您的 AI 服务 API 端点 URL")
@@ -41,9 +42,11 @@ class SettingsDialog(QDialog):
         self.key_input.setToolTip("输入您的 AI 服务 API 密钥 (保密)")
         self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
 
-        self.model_input = QLineEdit(self._current_model_id)
-        self.model_input.setPlaceholderText("例如: gpt-4-turbo")
-        self.model_input.setToolTip("输入要使用的 AI 模型 ID")
+        # <<< MODIFIED: Use _current_model_id_string and update placeholder/tooltip >>>
+        self.model_input = QLineEdit(self._current_model_id_string)
+        self.model_input.setPlaceholderText("例如: gpt-4-turbo,claude-3 (逗号分隔)") # Moved hint here
+        self.model_input.setToolTip("输入一个或多个 AI 模型 ID，用英文逗号分隔")
+        # <<< END MODIFICATION >>>
 
         self.show_hide_button = QPushButton()
         self.show_hide_button.setCheckable(True); self.show_hide_button.setChecked(False)
@@ -91,7 +94,10 @@ class SettingsDialog(QDialog):
         # --- Layout ---
         api_groupbox = QGroupBox("API 配置"); api_layout = QFormLayout(api_groupbox)
         api_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows); api_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight); api_layout.setSpacing(10)
-        api_layout.addRow("API URL:", self.url_input); api_layout.addRow("API 密钥:", key_layout); api_layout.addRow("模型 ID:", self.model_input)
+        api_layout.addRow("API URL:", self.url_input); api_layout.addRow("API 密钥:", key_layout)
+        # <<< MODIFIED: Changed Label text for model input row >>>
+        api_layout.addRow("模型 ID:", self.model_input) # Removed "(逗号分隔)" from label
+        # <<< END MODIFICATION >>>
 
         ui_groupbox = QGroupBox("界面与行为"); ui_layout = QVBoxLayout(ui_groupbox) # Use QVBoxLayout for better control
         ui_layout.setSpacing(10)
@@ -140,7 +146,9 @@ class SettingsDialog(QDialog):
         current_config_values = config.get_current_config()
         self._current_api_key = current_config_values.get("api_key", "")
         self._current_api_url = current_config_values.get("api_url", "")
-        self._current_model_id = current_config_values.get("model_id", "")
+        # <<< MODIFIED: Load model_id_string >>>
+        self._current_model_id_string = current_config_values.get("model_id_string", "")
+        # <<< END MODIFICATION >>>
         self._current_auto_startup = current_config_values.get("auto_startup", False)
         self._current_theme = current_config_values.get("theme", "system")
         self._current_include_cli_context = current_config_values.get("include_cli_context", config.DEFAULT_INCLUDE_CLI_CONTEXT)
@@ -156,7 +164,9 @@ class SettingsDialog(QDialog):
         # Update UI elements
         self.url_input.setText(self._current_api_url)
         self.key_input.setText(self._current_api_key)
-        self.model_input.setText(self._current_model_id)
+        # <<< MODIFIED: Update model_input with string >>>
+        self.model_input.setText(self._current_model_id_string)
+        # <<< END MODIFICATION >>>
         self.auto_startup_checkbox.setChecked(self._current_auto_startup)
         current_theme_index = self.theme_combobox.findData(self._current_theme)
         self.theme_combobox.setCurrentIndex(current_theme_index if current_theme_index != -1 else 0)
@@ -202,7 +212,7 @@ class SettingsDialog(QDialog):
         """Handles the reset button click."""
         reply = QMessageBox.warning(
             self, "确认重置",
-            "您确定要将所有设置恢复为默认值并清除所有缓存数据（包括API密钥、聊天记录、命令历史和保存的目录）吗？\n\n此操作无法撤销！",
+            "您确定要将所有设置恢复为默认值并清除所有缓存数据（包括API密钥、模型列表、聊天记录、命令历史和保存的目录）吗？\n\n此操作无法撤销！",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel
         )
@@ -213,7 +223,7 @@ class SettingsDialog(QDialog):
                 print("Config module reset executed.")
                 self.update_fields_from_config() # Update dialog fields
                 print("Settings dialog fields updated to reflect reset.")
-                QMessageBox.information(self, "重置完成", "设置已恢复为默认值，缓存已清除。\n您可能需要重新配置API密钥才能使用AI功能。")
+                QMessageBox.information(self, "重置完成", "设置已恢复为默认值，缓存已清除。\n您可能需要重新配置API密钥和模型ID才能使用AI功能。") # Updated message
             except Exception as e:
                  print(f"Error during reset process: {e}")
                  QMessageBox.critical(self, "重置错误", f"恢复默认设置时发生错误:\n{e}")
@@ -223,26 +233,36 @@ class SettingsDialog(QDialog):
 
     def validate_and_accept(self):
         """Validate inputs before accepting the dialog."""
-        api_key = self.key_input.text().strip(); api_url = self.url_input.text().strip(); model_id = self.model_input.text().strip()
+        # <<< MODIFIED: Validate model_id_string >>>
+        api_key = self.key_input.text().strip()
+        api_url = self.url_input.text().strip()
+        model_id_string = self.model_input.text().strip()
+        # <<< END MODIFICATION >>>
+
         self.error_label.setText(""); self.error_label.setVisible(False)
         default_style = ""; self.url_input.setStyleSheet(default_style); self.key_input.setStyleSheet(default_style); self.model_input.setStyleSheet(default_style)
         errors = []
         if not api_url: errors.append("API URL")
         if not api_key: errors.append("API 密钥")
-        if not model_id: errors.append("模型 ID")
+        # <<< MODIFIED: Validate model_id_string is not empty >>>
+        if not model_id_string: errors.append("模型 ID")
+        # Optionally add more complex validation for comma separation here if desired
+        # <<< END MODIFICATION >>>
 
         if errors:
             error_msg = "以下必填字段不能为空:\n- " + "\n- ".join(errors); self.error_label.setText(error_msg); self.error_label.setVisible(True)
             error_style = "border: 1px solid red;"; first_error_field = None
             if "API URL" in errors: self.url_input.setStyleSheet(error_style); first_error_field = first_error_field or self.url_input
             if "API 密钥" in errors: self.key_input.setStyleSheet(error_style); first_error_field = first_error_field or self.key_input
+            # <<< MODIFIED: Highlight model input on error >>>
             if "模型 ID" in errors: self.model_input.setStyleSheet(error_style); first_error_field = first_error_field or self.model_input
+            # <<< END MODIFICATION >>>
             if first_error_field: first_error_field.setFocus()
             print(f"Settings validation failed: {error_msg}")
             return
         self.accept()
 
-    # <<< MODIFICATION START: Add timestamp value to return tuple >>>
+    # <<< MODIFIED: Return model_id_string >>>
     def get_values(self):
         """Returns all configured values from the dialog."""
         selected_theme = self.theme_combobox.currentData()
@@ -250,10 +270,10 @@ class SettingsDialog(QDialog):
         return (
             self.key_input.text().strip(),
             self.url_input.text().strip(),
-            self.model_input.text().strip(),
+            self.model_input.text().strip(), # Return the comma-separated string
             self.auto_startup_checkbox.isChecked(),
             selected_theme,
             self.include_cli_context_checkbox.isChecked(),
-            self.include_timestamp_checkbox.isChecked(), # New value added here
+            self.include_timestamp_checkbox.isChecked(), # Timestamp value added here
         )
-    # <<< MODIFICATION END >>>
+    # <<< END MODIFICATION >>>

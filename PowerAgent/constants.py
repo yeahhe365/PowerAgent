@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/constants.py
+# (No changes needed in this file for this feature)
 # -----------------------------------------------------------------------
 # constants.py
 # -*- coding: utf-8 -*-

@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/ui_components.py
+# (MODIFIED)
 # ---------------------------------------
 # gui/ui_components.py
 # -*- coding: utf-8 -*-
@@ -12,7 +13,7 @@ from typing import TYPE_CHECKING # To avoid circular import for type hinting
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QTextEdit, QLineEdit, QPushButton, QSplitter, QLabel, QFrame,
-    QSizePolicy, QToolBar, QCompleter
+    QSizePolicy, QToolBar, QCompleter, QComboBox # <<< Added QComboBox
 )
 from PySide6.QtCore import Qt, QSize, QStringListModel, QRect
 from PySide6.QtGui import QAction, QIcon, QPainter, QColor, QBrush, QPen # QPainter etc already imported
@@ -81,7 +82,7 @@ def create_ui_elements(main_window: 'MainWindow'):
 
     settings_icon = main_window._get_icon("preferences-system", "settings.png", "⚙️")
     settings_action = QAction(settings_icon, "设置", main_window)
-    settings_action.setToolTip("配置 API、主题、自动启动及其他设置")
+    settings_action.setToolTip("配置 API、模型列表、主题、自动启动及其他设置") # Modified tooltip
     settings_action.triggered.connect(main_window.open_settings_dialog)
     toolbar.addAction(settings_action)
 
@@ -89,20 +90,29 @@ def create_ui_elements(main_window: 'MainWindow'):
     spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
     toolbar.addWidget(spacer)
 
-    main_window.toolbar_cwd_label = QLabel("...")
-    main_window.toolbar_cwd_label.setObjectName("ToolbarCwdLabel")
-    main_window.toolbar_cwd_label.setToolTip("当前工作目录")
-    toolbar.addWidget(main_window.toolbar_cwd_label)
+    # <<< REMOVED CWD LABEL CREATION >>>
+    # main_window.toolbar_cwd_label = QLabel("...")
+    # main_window.toolbar_cwd_label.setObjectName("ToolbarCwdLabel")
+    # main_window.toolbar_cwd_label.setToolTip("当前工作目录")
+    # toolbar.addWidget(main_window.toolbar_cwd_label)
 
-    cwd_separator = QFrame()
-    cwd_separator.setFrameShape(QFrame.Shape.VLine)
-    cwd_separator.setFrameShadow(QFrame.Shadow.Sunken)
-    toolbar.addWidget(cwd_separator)
+    # <<< REMOVED CWD SEPARATOR CREATION >>>
+    # cwd_separator = QFrame()
+    # cwd_separator.setFrameShape(QFrame.Shape.VLine)
+    # cwd_separator.setFrameShadow(QFrame.Shadow.Sunken)
+    # toolbar.addWidget(cwd_separator)
 
-    main_window.model_id_label = QLabel(f"模型: {config.MODEL_ID or '未配置'}")
-    main_window.model_id_label.setObjectName("ModelIdLabel")
-    main_window.model_id_label.setToolTip(f"当前使用的 AI 模型 ID: {config.MODEL_ID or '未配置'}")
-    toolbar.addWidget(main_window.model_id_label)
+    # <<< MODIFIED: Replace QLabel with QComboBox >>>
+    main_window.model_selector_combo = QComboBox()
+    main_window.model_selector_combo.setObjectName("ModelSelectorCombo") # For styling
+    main_window.model_selector_combo.setToolTip("点击选择要使用的 AI 模型")
+    main_window.model_selector_combo.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Preferred) # Keep policy but limit width
+    # main_window.model_selector_combo.setMinimumWidth(80)  # Optional: if needed
+    main_window.model_selector_combo.setMaximumWidth(180) # <<< Increased max width slightly as CWD label is gone >>>
+    # Connect the signal in MainWindow after UI setup
+    toolbar.addWidget(main_window.model_selector_combo)
+    # <<< END MODIFICATION >>>
+
 
     status_separator = QFrame()
     status_separator.setFrameShape(QFrame.Shape.VLine)
@@ -223,16 +233,24 @@ def create_ui_elements(main_window: 'MainWindow'):
     right_layout.addLayout(button_layout)
     main_window.splitter.addWidget(right_widget)
 
+    # --- Connect Signals AFTER UI elements are created ---
+    if main_window.model_selector_combo:
+        # Using currentTextChanged is slightly more robust if items can be edited (though not in this case)
+        # currentIndexChanged is also fine here.
+        main_window.model_selector_combo.currentTextChanged.connect(main_window.handle_model_selection_changed)
+
+
     # --- Initial Splitter Sizes ---
-    try:
-        default_width = main_window.geometry().width()
-        cli_width = int(default_width * 0.55)
-        chat_width = default_width - cli_width
-        main_window.splitter.setSizes([cli_width, chat_width])
-    except Exception as e:
-        print(f"Could not set default splitter sizes: {e}")
-        default_width = 850
-        main_window.splitter.setSizes([int(default_width*0.55), int(default_width*0.45)])
+    # Moved the setting of default sizes to __init__ after restoreState check
+    # try:
+    #     default_width = main_window.geometry().width()
+    #     cli_width = int(default_width * 0.55)
+    #     chat_width = default_width - cli_width
+    #     main_window.splitter.setSizes([cli_width, chat_width])
+    # except Exception as e:
+    #     print(f"Could not set default splitter sizes: {e}")
+    #     default_width = 850
+    #     main_window.splitter.setSizes([int(default_width*0.55), int(default_width*0.45)])
 
     # --- Status Bar ---
     main_window.status_bar = main_window.statusBar()

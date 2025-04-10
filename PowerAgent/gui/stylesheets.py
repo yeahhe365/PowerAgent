@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/stylesheets.py
+# (MODIFIED - Removed CWD Label styling)
 # ---------------------------------------
 # gui/stylesheets.py
 # -*- coding: utf-8 -*-
@@ -8,7 +9,7 @@
 Contains the QSS stylesheet templates used by the MainWindow.
 """
 
-# Stylesheet template (Re-added CliPromptLabel styling)
+# Stylesheet template (Removed ToolbarCwdLabel styling)
 STYLESHEET_TEMPLATE = """
     /* General */
     QMainWindow {{ }}
@@ -20,17 +21,25 @@ STYLESHEET_TEMPLATE = """
         padding: 2px;
         spacing: 5px;
     }}
-    /* Toolbar Labels */
-    QToolBar QLabel#ToolbarCwdLabel,
-    QToolBar QLabel#ModelIdLabel {{
-        padding: 0px 5px;
-        font-size: 9pt;
-        color: {status_label_color};
+    /* <<< REMOVED Toolbar CWD Label Styling >>> */
+    /* QToolBar QLabel#ToolbarCwdLabel {{ ... }} */
+
+    /* <<< ADDED: Styling for Toolbar ComboBox >>> */
+    QToolBar QComboBox#ModelSelectorCombo {{
+        /* font-size: 9pt; */ /* Uncomment to match label font size */
+        color: {status_label_color}; /* Match other status text color */
+        /* Add padding if needed */
+        /* padding: 1px 5px 1px 5px; */
+        min-width: 100px; /* Give it some minimum space */
+        /* background-color: {button_bg}; */ /* Optional: Match button background */
+        /* border: 1px solid {border}; */ /* Optional: Add border */
+        /* border-radius: 3px; */ /* Optional: Round corners */
     }}
-    /* Specific Toolbar CWD Label color */
-    QToolBar QLabel#ToolbarCwdLabel {{
-        color: {cwd_label_color};
+    QToolBar QComboBox#ModelSelectorCombo:disabled {{
+        color: {text_disabled};
     }}
+    /* <<< END ADDED >>> */
+
     /* Separator Styling */
     QToolBar QFrame {{
         margin-left: 3px;
@@ -161,7 +170,7 @@ STYLESHEET_TEMPLATE = """
     /* <<< END ADDED >>> */
 """
 
-# Minimal stylesheet (Re-added CliPromptLabel font styling)
+# Minimal stylesheet (Removed ToolbarCwdLabel font styling)
 MINIMAL_STYLESHEET_SYSTEM_THEME = """
     #CliOutput, #CliInput, #CliPromptLabel {{
         font-family: {mono_font_family};
@@ -193,12 +202,17 @@ MINIMAL_STYLESHEET_SYSTEM_THEME = """
         border: 1px solid {border};
         padding: 3px;
      }}
-    /* Toolbar Labels */
-    QToolBar QLabel#ToolbarCwdLabel,
-    QToolBar QLabel#ModelIdLabel {{
-        padding: 0px 5px;
-        font-size: 9pt;
+    /* <<< REMOVED Toolbar CWD Label Styling >>> */
+    /* QToolBar QLabel#ToolbarCwdLabel {{ ... }} */
+
+    /* <<< ADDED: Basic Styling for Toolbar ComboBox in System Theme >>> */
+    QToolBar QComboBox#ModelSelectorCombo {{
+        /* font-size: 9pt; */ /* Uncomment to match label font size */
+        min-width: 100px; /* Give it some minimum space */
+        /* padding: 1px 5px 1px 5px; */ /* Optional padding */
     }}
+    /* <<< END ADDED >>> */
+
     /* Separator Styling */
     QToolBar QFrame {{
         margin-left: 3px;

@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/main_window.py
+# (MODIFIED)
 # ---------------------------------------
 # gui/main_window.py
 # -*- coding: utf-8 -*-
@@ -15,7 +16,7 @@ from collections import deque
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QSplitter,
     QDialog, QApplication, QFrame, QLineEdit, QTextEdit,
-    QMessageBox, QLabel, QPushButton # QPushButton 已在导入列表中
+    QMessageBox, QLabel, QPushButton, QComboBox # <<< Added QComboBox
 )
 from PySide6.QtCore import Qt, Slot, QSettings, QCoreApplication, QStandardPaths, QSize, QStringListModel, QEvent, QTimer,QThread
 from PySide6.QtGui import (
@@ -63,7 +64,8 @@ class MainWindow(QMainWindow):
         self._closing = False
 
         # --- Initialize UI Element Placeholders ---
-        self.toolbar_cwd_label = None; self.model_id_label = None
+        # self.toolbar_cwd_label = None # <<< REMOVED >>>
+        self.model_selector_combo: QComboBox = None # New Combo Box
         self.status_indicator: StatusIndicatorWidget = None
         self.cli_prompt_label = None
         self.cli_output_display = None; self.cli_input = None
@@ -94,7 +96,7 @@ class MainWindow(QMainWindow):
 
         # Basic Window Setup
         self.setWindowTitle(APP_NAME)
-        self.setGeometry(100, 100, 850, 585)
+        self.setGeometry(100, 100, 850, 585) # <<< Adjusted default width slightly >>>
         self.set_window_icon()
 
         # Setup UI Elements using the external function
@@ -108,7 +110,12 @@ class MainWindow(QMainWindow):
                 self.splitter.restoreState(splitter_state)
                 print("Restored splitter state from settings.")
             elif self.splitter:
-                 print("Set default splitter sizes (55%/45%) during UI creation.")
+                 # Adjust default split based on new window width
+                 default_width = self.geometry().width()
+                 cli_width = int(default_width * 0.55)
+                 chat_width = default_width - cli_width
+                 self.splitter.setSizes([cli_width, chat_width])
+                 print(f"Set default splitter sizes ({cli_width}/{chat_width}) during UI creation.")
             else:
                  print("Warning: Splitter object not found after UI setup.")
         except Exception as e:
@@ -120,7 +127,7 @@ class MainWindow(QMainWindow):
 
         # Set initial status display
         self.update_status_indicator(False)
-        self.update_model_id_display()
+        self.update_model_selector()
 
         # Add welcome message
         if not self.conversation_history:
@@ -129,8 +136,7 @@ class MainWindow(QMainWindow):
         else:
              print("[MainWindow] Skipping initial welcome message as history was loaded.")
 
-        # Update CWD label (toolbar) and CLI prompt
-        self.update_cwd_label()
+        # Update CLI prompt (CWD label in toolbar removed)
         self.update_prompt()
         if self.cli_input:
             self.cli_input.setFocus()
@@ -206,14 +212,17 @@ class MainWindow(QMainWindow):
             print("Applied system theme (minimal QSS). Relies on global palette.")
         else: # "dark" or "light"
             cli_bg=get_color("cli_bg", theme); cli_output_color=get_color("cli_output", theme); prompt_color=get_color("prompt", theme); border_color_const=get_color("border", theme)
-            text_main_color=get_color("text_main", theme); status_label_color=get_color("status_label", theme); cwd_label_color=get_color("cwd_label", theme)
+            text_main_color=get_color("text_main", theme); status_label_color=get_color("status_label", theme)
+            # cwd_label_color=get_color("cwd_label", theme) # <<< REMOVED CWD Label Color >>>
             window_bg=palette.color(QPalette.ColorRole.Window).name(); base_bg=palette.color(QPalette.ColorRole.Base).name(); highlight_bg=palette.color(QPalette.ColorRole.Highlight).name(); highlighted_text=palette.color(QPalette.ColorRole.HighlightedText).name()
             button_bg=palette.color(QPalette.ColorRole.Button).name(); button_text_color=palette.color(QPalette.ColorRole.ButtonText).name(); tooltip_bg=palette.color(QPalette.ColorRole.ToolTipBase).name(); tooltip_text=palette.color(QPalette.ColorRole.ToolTipText).name()
             text_disabled=palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text).name(); button_disabled_bg=palette.color(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Button).name()
             border_disabled=palette.color(QPalette.ColorGroup.Disabled, border_color_role).name(); button_pressed_bg=QColor(button_bg).darker(115).name()
+
+            # <<< REMOVED cwd_label_color from format string >>>
             qss = STYLESHEET_TEMPLATE.format(
                 window_bg=window_bg, base_bg=base_bg, text_main=text_main_color.name(), cli_bg=cli_bg.name(), cli_output=cli_output_color.name(), prompt_color=prompt_color.name(),
-                cwd_label_color=cwd_label_color.name(), border=border_color_const.name(), highlight_bg=highlight_bg,
+                border=border_color_const.name(), highlight_bg=highlight_bg,
                 mono_font_family=mono_font_family, mono_font_size=mono_font_size, label_font_size=label_font_size, button_bg=button_bg, button_text=button_text_color,
                 highlighted_text=highlighted_text, button_pressed_bg=button_pressed_bg, button_disabled_bg=button_disabled_bg, text_disabled=text_disabled,
                 border_disabled=border_disabled, tooltip_bg=tooltip_bg, tooltip_text=tooltip_text, status_label_color=status_label_color.name()
@@ -222,7 +231,7 @@ class MainWindow(QMainWindow):
 
         self.setStyleSheet(qss)
         self.update()
-        self.update_cwd_label()
+        # self.update_cwd_label() # <<< REMOVED Call >>>
         self.update_prompt()
 
     def load_and_apply_state(self):
@@ -236,49 +245,20 @@ class MainWindow(QMainWindow):
             self.conversation_history.clear() # Clear internal before re-adding
             for role, message in history_copy:
                 self.add_chat_message(role, message, add_to_internal_history=True)
-            print("History applied to display and internal deque.")
+            print("History applied to display and internal history deque.")
         else:
             self.conversation_history = deque(history_copy, maxlen=self.conversation_history.maxlen)
             print("Warning: Chat history display not found during state application. Internal history reloaded.")
 
-        self.update_model_id_display()
-        self.update_cwd_label()
+        self.update_model_selector()
+        # self.update_cwd_label() # <<< REMOVED Call >>>
         self.update_prompt()
 
-    def get_short_cwd(self, max_len=35):
-         # (Same logic)
-         display_cwd = self.current_directory
-         if platform.system() == "Windows" and len(display_cwd) >= 2 and display_cwd[1] == ':':
-             display_cwd = display_cwd[0].upper() + display_cwd[1:]
-         try:
-             home_dir = os.path.expanduser("~")
-             home_dir_compare = home_dir
-             if platform.system() == "Windows" and len(home_dir_compare) >= 2 and home_dir_compare[1] == ':':
-                 home_dir_compare = home_dir_compare[0].upper() + home_dir_compare[1:]
-             if display_cwd.startswith(home_dir_compare):
-                 if display_cwd == home_dir_compare: display_cwd = "~"
-                 elif display_cwd.startswith(home_dir_compare + os.path.sep): display_cwd = "~" + display_cwd[len(home_dir):]
-             if len(display_cwd) > max_len:
-                 parts = display_cwd.split(os.path.sep); num_parts = len(parts)
-                 is_windows_drive_root = platform.system() == "Windows" and len(parts) == 2 and parts[1] == '' and parts[0].endswith(':')
-                 if not is_windows_drive_root and num_parts > 2:
-                    first_part = parts[0] if parts[0] != "~" else "~"
-                    if not first_part and len(parts) > 1 and parts[1]: first_part = f"{os.path.sep}{parts[1]}"
-                    display_cwd_short = f"{first_part}{os.path.sep}...{os.path.sep}{parts[-1]}"
-                    if len(display_cwd_short) > max_len and num_parts > 3: display_cwd = f"{first_part}{os.path.sep}...{os.path.sep}{parts[-2]}{os.path.sep}{parts[-1]}"
-                    else: display_cwd = display_cwd_short
-             if len(display_cwd) > max_len: display_cwd = "..." + display_cwd[-(max_len-3):]
-         except Exception as e: print(f"Error shortening CWD: {e}")
-         return display_cwd
+    # <<< REMOVED get_short_cwd method >>>
+    # def get_short_cwd(self, max_len=35): ...
 
-    def update_cwd_label(self):
-        # (Same logic, already has check)
-        if self._closing: return
-        if self.toolbar_cwd_label:
-            short_cwd = self.get_short_cwd(max_len=30)
-            self.toolbar_cwd_label.setText(f"{short_cwd}")
-            self.toolbar_cwd_label.setToolTip(f"当前工作目录: {self.current_directory}")
-        self.update_prompt()
+    # <<< REMOVED update_cwd_label method >>>
+    # def update_cwd_label(self): ...
 
     def update_prompt(self):
         # (Same logic, already has check)
@@ -301,13 +281,53 @@ class MainWindow(QMainWindow):
         self.cli_prompt_label.setText(prompt_text)
         self.cli_prompt_label.setToolTip(f"当前工作目录: {self.current_directory}")
 
-    def update_model_id_display(self):
-        # (Same logic, already has check)
-        if self._closing: return
-        if self.model_id_label:
-            model_text = config.MODEL_ID or '未配置'
-            self.model_id_label.setText(f"模型: {model_text}")
-            self.model_id_label.setToolTip(f"当前使用的 AI 模型 ID: {model_text}")
+    def update_model_selector(self):
+        """Updates the model selection QComboBox based on the configuration."""
+        if self._closing or not self.model_selector_combo:
+            return
+
+        print("Updating model selector...")
+        current_text = self.model_selector_combo.currentText() # Store current selection before clearing
+        self.model_selector_combo.blockSignals(True) # Prevent signals during population
+        self.model_selector_combo.clear()
+
+        model_id_string = config.MODEL_ID_STRING
+        saved_selected_model = config.CURRENTLY_SELECTED_MODEL_ID
+        model_list = []
+        if model_id_string:
+            model_list = [m.strip() for m in model_id_string.split(',') if m.strip()]
+
+        if not model_list:
+            placeholder_text = "未配置模型"
+            self.model_selector_combo.addItem(placeholder_text)
+            self.model_selector_combo.setEnabled(False)
+            self.model_selector_combo.setToolTip("请在设置中配置模型 ID")
+            # Update config if it somehow thought a model was selected
+            if config.CURRENTLY_SELECTED_MODEL_ID != "":
+                config.CURRENTLY_SELECTED_MODEL_ID = ""
+                self.save_state() # Persist the fact that no model is selected now
+            print("Model selector updated: No models configured.")
+        else:
+            self.model_selector_combo.addItems(model_list)
+            self.model_selector_combo.setEnabled(True)
+            self.model_selector_combo.setToolTip("点击选择要使用的 AI 模型")
+
+            found_index = self.model_selector_combo.findText(saved_selected_model)
+
+            if saved_selected_model and found_index != -1:
+                # Saved selection is valid and exists in the new list
+                self.model_selector_combo.setCurrentIndex(found_index)
+                print(f"Model selector updated: Restored selection '{saved_selected_model}'.")
+            else:
+                # Saved selection is invalid or not found, default to the first item
+                default_model = model_list[0]
+                self.model_selector_combo.setCurrentIndex(0)
+                print(f"Model selector updated: Saved selection '{saved_selected_model}' not found or invalid. Defaulting to first item '{default_model}'.")
+                # Update the config and save this default selection
+                config.CURRENTLY_SELECTED_MODEL_ID = default_model
+                self.save_state() # Persist the new default selection
+
+        self.model_selector_combo.blockSignals(False) # Re-enable signals
 
     def update_status_indicator(self, busy: bool):
         """Updates the custom status indicator widget's state."""
@@ -391,19 +411,41 @@ class MainWindow(QMainWindow):
         prefix_format = QTextCharFormat(); message_format = QTextCharFormat()
         prefix_to_check = None; prefix_color = None; message_color = None
 
-        # Heuristics for coloring based on prefixes (can be improved)
-        if message_type == "user" and decoded_message.startswith("User: "): # Manual command echo
-            prefix_to_check = "User: "; prefix_color = get_color('user', current_theme)
-        elif message_type == "output" and decoded_message.startswith("Model: "): # AI command echo
-             prefix_to_check = "Model: "; prefix_color = get_color('model', current_theme)
+        # ================================================================= #
+        # <<< MODIFIED: Handle User/Model <CWD>: prefixes for coloring >>>
+        # ================================================================= #
+        if message_type == "user": # Manual command echo with CWD
+            user_prefix_match = re.match(r"^(User\s+.*?):\s", decoded_message)
+            if user_prefix_match:
+                prefix_to_check = user_prefix_match.group(1) + ":"
+                prefix_color = get_color('user', current_theme)
+            else:
+                print(f"[Warning] User message did not match expected 'User <CWD>: command' format: {decoded_message[:50]}...")
+                message_color = get_color('cli_output', current_theme)
 
-        # Determine message color based on type
-        if message_type == "error":
-            message_color = get_color('cli_error', current_theme)
-        elif message_type == "system": message_color = get_color('system', current_theme)
-        else: message_color = get_color('cli_output', current_theme) # Default output
+        elif message_type == "output": # Could be AI command echo OR regular output
+            # Check specifically for the AI command echo format first
+            model_prefix_match = re.match(r"^(Model\s+.*?):\s", decoded_message)
+            if model_prefix_match:
+                prefix_to_check = model_prefix_match.group(1) + ":"
+                prefix_color = get_color('model', current_theme)
+            else:
+                # If not AI command echo, treat as regular output
+                message_color = get_color('cli_output', current_theme)
+        # ================================================================= #
+        # <<< END MODIFICATION >>>
+        # ================================================================= #
 
-        # Override for system theme if needed
+        # Determine message color based on type (only if not set by prefix logic)
+        if message_color is None:
+            if message_type == "error":
+                message_color = get_color('cli_error', current_theme)
+            elif message_type == "system":
+                message_color = get_color('system', current_theme)
+            else: # Default color for the command part after a prefix
+                message_color = get_color('cli_output', current_theme)
+
+        # Override for system theme if needed (applies to message_color)
         if current_theme == "system":
             if message_type == "error":
                  message_color = target_widget.palette().color(QPalette.ColorRole.BrightText)
@@ -411,18 +453,26 @@ class MainWindow(QMainWindow):
             elif message_type == "system":
                  message_color = target_widget.palette().color(QPalette.ColorRole.ToolTipText)
                  if not message_color.isValid(): message_color = target_widget.palette().color(QPalette.ColorRole.Text)
-            else: message_color = target_widget.palette().color(QPalette.ColorRole.Text)
+            elif message_color == get_color('cli_output', "dark"): # Check if using default fallback
+                 message_color = target_widget.palette().color(QPalette.ColorRole.Text) # Use system text color
 
         # Insert text safely
         try:
             if prefix_to_check and decoded_message.startswith(prefix_to_check):
+                # Insert Prefix (User or Model with CWD)
                 if prefix_color: prefix_format.setForeground(prefix_color)
-                cursor.setCharFormat(prefix_format); cursor.insertText(prefix_to_check)
-                message_part = decoded_message[len(prefix_to_check):]
+                prefix_font = prefix_format.font(); prefix_font.setBold(True); prefix_format.setFont(prefix_font)
+                cursor.setCharFormat(prefix_format); cursor.insertText(prefix_to_check + " ")
+
+                # Insert Message Part (command)
+                message_part = decoded_message[len(prefix_to_check):].strip()
                 if message_color: message_format.setForeground(message_color)
+                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font)
                 cursor.setCharFormat(message_format); cursor.insertText(message_part + "\n")
             else:
+                # Insert the whole message with a single color (error, system, regular output)
                 if message_color: message_format.setForeground(message_color)
+                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font)
                 cursor.setCharFormat(message_format); cursor.insertText(decoded_message + "\n")
         except RuntimeError: print("Warning: Could not insert CLI text."); return
 
@@ -434,25 +484,26 @@ class MainWindow(QMainWindow):
                 except RuntimeError: print("Warning: Could not scroll/ensure CLI cursor visible.")
 
     def show_help(self):
-        # (Same logic, relies on add_chat_message which now has checks)
+        # Help text updated slightly to reflect UI changes if any (like model selector)
         help_title = f"--- {APP_NAME} 帮助 ---"
         core_info = """
 **主要操作:**
 1.  **与 AI 对话 (上方聊天窗口):**
+    - 从工具栏选择要使用的 AI 模型。
     - 输入你的任务请求 (例如: "列出当前目录的 python 文件", "创建 temp 目录")。
-    - AI 会回复，并自动执行建议的 `<cmd>命令</cmd>`。
+    - AI 会回复，并将建议的 `<cmd>命令</cmd>`（连同工作目录）回显在下方CLI窗口后自动执行。
     - (可选) 如果在设置中启用“自动将近期CLI输出作为上下文发送给AI”，则左侧CLI输出的**全部**内容会自动作为上下文发送给AI。
     - 输入 `/` 开头的命令执行特殊操作。
 2.  **执行手动命令 (下方命令行窗口):**
     - 输入标准的 Shell 命令 (如 `dir`, `Get-ChildItem`, `cd ..`, `python script.py`)。
-    - 按 Enter 执行。
+    - 按 Enter 执行。命令和工作目录会回显在上方。
     - 使用 `↑` / `↓` 键浏览命令历史。
-    - 使用 `cd <目录>` 更改工作目录。
+    - 使用 `cd <目录>` 更改工作目录 (使用 `/cwd` 命令查看当前目录)。
     - 使用 `cls` (Win) 或 `clear` (Linux/Mac) 清空此窗口。
 """
         commands_title = "**常用聊天命令:**"
         cmd_help = "/help          显示此帮助。"
-        cmd_settings = "/settings      打开设置 (API密钥, 主题, CLI上下文等)。"
+        cmd_settings = "/settings      打开设置 (API密钥, 模型列表, 主题, CLI上下文等)。"
         cmd_clear = "/clear         清除聊天窗口及历史。"
         cmd_clear_cli = "/clear_cli     清除命令行窗口。"
         cmd_cwd = "/cwd           在聊天中显示当前完整目录。"
@@ -460,7 +511,8 @@ class MainWindow(QMainWindow):
         cmd_show_cli = "/show_cli [N]  在聊天中显示左侧 CLI 输出的最后 N 行 (默认 10)。"
         cmd_exit = "/exit          退出 {APP_NAME}。"
         toolbar_info_title = "**工具栏提示:**"
-        toolbar_desc = f"- 左侧: 设置按钮。\n- 右侧: 当前目录 | 模型({config.MODEL_ID or 'N/A'}) | 状态灯(🟢空闲/🔴忙碌)。"
+        # <<< UPDATED Toolbar Description >>>
+        toolbar_desc = (f"- 左侧: 设置按钮。\n- 右侧: 模型选择下拉框 | 状态灯(🟢空闲/🔴忙碌)。")
         help_text = f"{help_title}\n\n{core_info}\n\n{commands_title}\n {cmd_help}\n {cmd_settings}\n {cmd_clear}\n {cmd_clear_cli}\n {cmd_cwd}\n {cmd_copy_cli}\n {cmd_show_cli}\n {cmd_exit}\n\n{toolbar_info_title}\n{toolbar_desc}\n"
         self.add_chat_message("Help", help_text, add_to_internal_history=False)
 
@@ -468,7 +520,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def handle_send_message(self):
-        if self._closing or not self.chat_input: return
+        # Handles sending chat messages (no change needed here for CLI echo)
+        if self._closing or not self.chat_input or not self.model_selector_combo: return
         user_prompt = self.chat_input.toPlainText().strip()
         if not user_prompt: return
         self.chat_input.clear()
@@ -477,9 +530,16 @@ class MainWindow(QMainWindow):
             self.handle_slash_command(user_prompt)
             return
 
-        if not config.API_KEY or not config.API_URL or not config.MODEL_ID:
-            self.add_chat_message("Error", "API 未配置。请使用“设置”按钮或 /settings 命令进行配置。")
-            return
+        selected_model_id = self.model_selector_combo.currentText()
+        is_placeholder = selected_model_id == "未配置模型" or not selected_model_id
+
+        # Check API config AND selected model validity
+        if not config.API_KEY or not config.API_URL or not config.MODEL_ID_STRING or is_placeholder:
+             if is_placeholder:
+                 self.add_chat_message("Error", "请先在工具栏选择一个有效的 AI 模型。如果列表为空，请使用“设置”配置模型 ID。")
+             else:
+                 self.add_chat_message("Error", "API 未配置。请使用“设置”按钮或 /settings 命令进行配置。")
+             return
 
         self.stop_api_worker()
 
@@ -504,22 +564,22 @@ class MainWindow(QMainWindow):
                     history_for_worker.append(("User", user_prompt)) # Re-add user prompt
 
         self.set_busy_state(True, "api")
-        print("Starting ApiWorkerThread...")
+        print(f"Starting ApiWorkerThread for model: {selected_model_id}...")
         self.api_worker_thread = ApiWorkerThread(
             api_key=config.API_KEY,
             api_url=config.API_URL,
-            model_id=config.MODEL_ID,
+            model_id=selected_model_id, # Pass the selected model
             history=history_for_worker, # Pass the potentially modified history
             prompt=user_prompt,
             cwd=self.current_directory
         )
+        # Connect signals (output type is 'output' for AI commands/results)
         self.api_worker_thread.api_result.connect(self.handle_api_result)
         self.api_worker_thread.cli_output_signal.connect(lambda b: self.add_cli_output(b, "output"))
         self.api_worker_thread.cli_error_signal.connect(lambda b: self.add_cli_output(b, "error"))
         self.api_worker_thread.directory_changed_signal.connect(self.handle_directory_change)
         self.api_worker_thread.task_finished.connect(lambda: self.handle_task_finished("api"))
         self.api_worker_thread.start()
-
 
     def handle_slash_command(self, command):
         if self._closing: return
@@ -528,13 +588,13 @@ class MainWindow(QMainWindow):
 
         if cmd_base == "/exit": self.close()
         elif cmd_base == "/clear": self.handle_clear_chat()
-        elif cmd_base == "/clear_cli": self.handle_clear_cli() # <<< Use the new handler >>>
+        elif cmd_base == "/clear_cli": self.handle_clear_cli()
         elif cmd_base == "/clear_all":
             self.handle_clear_chat()
-            self.handle_clear_cli() # <<< Use the new handler >>>
+            self.handle_clear_cli()
             self.add_chat_message("System", "聊天和命令行显示已清除。", add_to_internal_history=False)
         elif cmd_base == "/settings": self.open_settings_dialog()
-        elif cmd_base == "/save": self.save_state(); self.add_chat_message("System", "当前状态 (历史, CWD) 已保存。")
+        elif cmd_base == "/save": self.save_state(); self.add_chat_message("System", "当前状态 (历史, CWD, 选择的模型) 已保存。")
         elif cmd_base == "/help": self.show_help()
         elif cmd_base == "/cwd": self.add_chat_message("System", f"当前工作目录: {self.current_directory}")
         elif cmd_base == "/copy_cli":
@@ -542,7 +602,7 @@ class MainWindow(QMainWindow):
                 full_cli_text = self.cli_output_display.toPlainText()
                 if full_cli_text:
                     try:
-                        clipboard = QApplication.clipboard() # Use QApplications clipboard
+                        clipboard = QApplication.clipboard()
                         if clipboard:
                             clipboard.setText(full_cli_text)
                             self.add_chat_message("System", "左侧 CLI 输出已复制到剪贴板。", add_to_internal_history=False)
@@ -557,9 +617,9 @@ class MainWindow(QMainWindow):
 
         elif cmd_base == "/show_cli":
             if self.cli_output_display:
-                lines_to_show = 10 # Default
+                lines_to_show = 10
                 if arg:
-                    try: lines_to_show = int(arg); lines_to_show = max(1, lines_to_show) # Ensure positive
+                    try: lines_to_show = int(arg); lines_to_show = max(1, lines_to_show)
                     except ValueError: self.add_chat_message("Error", f"无效的行数: '{arg}'", add_to_internal_history=False); return
 
                 full_cli_text = self.cli_output_display.toPlainText()
@@ -586,7 +646,6 @@ class MainWindow(QMainWindow):
         self.save_state();
         print("Chat history display and internal history deque cleared and state saved.")
 
-    # <<< ADDED: Handler for the new Clear CLI button >>>
     @Slot()
     def handle_clear_cli(self):
         """Clears the CLI output display."""
@@ -598,11 +657,7 @@ class MainWindow(QMainWindow):
             print("CLI output display cleared.")
         else:
             print("Warning: CLI output display not found during clear action.")
-        # No need to save state as CLI output is not saved
-        # Focus can remain where it is or go back to CLI input if desired
         if self.cli_input:
-            # Option: Add a short delay before setting focus if clearing feels abrupt
-            # QTimer.singleShot(50, lambda: self.cli_input.setFocus())
             self.cli_input.setFocus()
 
     @Slot()
@@ -622,25 +677,25 @@ class MainWindow(QMainWindow):
         command_lower = command.lower()
         if platform.system() == "Windows" and (command_lower == "cls" or command_lower == "clear"):
             print(f"Intercepted '{command}' command. Clearing CLI display directly.")
-            self.handle_clear_cli()
+            self.handle_clear_cli() # Use the dedicated handler
             return
         elif platform.system() != "Windows" and command_lower == "clear":
             print(f"Intercepted '{command}' command. Clearing CLI display directly.")
-            self.handle_clear_cli()
+            self.handle_clear_cli() # Use the dedicated handler
             return
 
         # Stop previous manual worker if any
         self.stop_manual_worker()
 
-        # Echo command to CLI display (as User)
-        echo_message_bytes = f"User: {command}".encode('utf-8')
-        self.add_cli_output(echo_message_bytes, "user")
+        # Echo command with CWD to CLI display (as User)
+        echo_message_bytes = f"User {self.current_directory}: {command}".encode('utf-8')
+        self.add_cli_output(echo_message_bytes, "user") # Pass "user" type for coloring
 
         # Set busy state and start worker thread
         self.set_busy_state(True, "manual")
         print(f"Starting ManualCommandThread for: {command}")
         self.manual_cmd_thread = ManualCommandThread(command, self.current_directory)
-        # Connect signals (same as before)
+        # Connect signals (output type is 'output' for regular results)
         self.manual_cmd_thread.cli_output_signal.connect(lambda b: self.add_cli_output(b, "output"))
         self.manual_cmd_thread.cli_error_signal.connect(lambda b: self.add_cli_output(b, "error"))
         self.manual_cmd_thread.directory_changed_signal.connect(self.handle_directory_change)
@@ -676,6 +731,26 @@ class MainWindow(QMainWindow):
                  self.cli_history_index = -1
         super().keyPressEvent(event) # Pass event on if not handled
 
+    @Slot(str)
+    def handle_model_selection_changed(self, selected_model: str):
+        """Handles the signal when the user changes the model in the QComboBox."""
+        if self._closing or not self.model_selector_combo:
+            return
+
+        # Avoid acting on placeholder or during updates
+        if not selected_model or selected_model == "未配置模型" or self.model_selector_combo.signalsBlocked():
+            return
+
+        current_config_selection = config.CURRENTLY_SELECTED_MODEL_ID
+        if selected_model != current_config_selection:
+            print(f"Model selection changed to: '{selected_model}'")
+            config.CURRENTLY_SELECTED_MODEL_ID = selected_model
+            self.save_state() # Save the state immediately to persist the new selection
+            self.add_chat_message("System", f"已切换模型至: {selected_model}", add_to_internal_history=False)
+        else:
+            pass
+
+
     def set_busy_state(self, busy: bool, task_type: str):
         """Updates UI element states (enabled/disabled) and the status indicator."""
         if self._closing: return
@@ -694,11 +769,9 @@ class MainWindow(QMainWindow):
         if self.chat_input: self.chat_input.setEnabled(not next_api_busy)
         if self.send_button: self.send_button.setEnabled(not next_api_busy)
         if self.clear_chat_button: self.clear_chat_button.setEnabled(not next_api_busy)
-        # <<< MODIFIED: Manage the new Clear CLI button's state >>>
-        # Should be disabled when a manual command is running (like the CLI input)
         if self.clear_cli_button: self.clear_cli_button.setEnabled(not next_manual_busy)
-        # <<< END MODIFICATION >>>
         if self.cli_input: self.cli_input.setEnabled(not next_manual_busy)
+        if self.model_selector_combo: self.model_selector_combo.setEnabled(not next_api_busy and self.model_selector_combo.count() > 0 and self.model_selector_combo.itemText(0) != "未配置模型")
 
         indicator_busy_state = next_api_busy or next_manual_busy
         self.update_status_indicator(indicator_busy_state)
@@ -737,7 +810,8 @@ class MainWindow(QMainWindow):
                  print(f"Error changing process working directory to '{self.current_directory}': {e}")
                  error_msg = f"错误: 无法将进程工作目录更改为 '{self.current_directory}': {e}"
                  self.add_cli_output(error_msg.encode(), "error") # This error doesn't need [stderr] prefix either
-             self.update_cwd_label();
+             # self.update_cwd_label(); # <<< REMOVED Call >>>
+             self.update_prompt() # Update prompt which shows CWD
              source = "手动命令" if is_manual_command else "AI 命令"
              print(f"App directory state changed from '{old_directory}' to '{self.current_directory}' via {source}")
              self.save_state()
@@ -770,19 +844,19 @@ class MainWindow(QMainWindow):
 
         if result == QDialog.DialogCode.Accepted:
             print("Settings dialog accepted.")
-            # Unpack values (assuming settings dialog returns them in order)
-            (api_key, api_url, model_id, auto_startup, new_theme,
-             include_cli_context, include_timestamp) = dialog.get_values() # Assumes get_values is updated
+            # Unpack values
+            (api_key, api_url, model_id_string, auto_startup, new_theme,
+             include_cli_context, include_timestamp) = dialog.get_values()
 
-            # Check for changes (assumes config state includes timestamp)
+            # Check for changes
             config_changed = (
                 api_key != current_config_before['api_key'] or
                 api_url != current_config_before['api_url'] or
-                model_id != current_config_before['model_id'] or
+                model_id_string != current_config_before['model_id_string'] or
                 auto_startup != current_config_before['auto_startup'] or
                 new_theme != current_config_before['theme'] or
                 include_cli_context != current_config_before['include_cli_context'] or
-                include_timestamp != current_config_before.get('include_timestamp_in_prompt', config.DEFAULT_INCLUDE_TIMESTAMP) # Check added safely
+                include_timestamp != current_config_before.get('include_timestamp_in_prompt', config.DEFAULT_INCLUDE_TIMESTAMP)
             )
 
             reset_button = dialog.findChild(QPushButton, "reset_button")
@@ -790,16 +864,24 @@ class MainWindow(QMainWindow):
 
             if config_changed:
                 print("Configuration change detected, saving...")
-                # Save config (assumes save_config is updated)
+                # Determine new selected model
+                new_model_list = [m.strip() for m in model_id_string.split(',') if m.strip()]
+                new_selected_model = config.CURRENTLY_SELECTED_MODEL_ID
+                if not new_selected_model or new_selected_model not in new_model_list:
+                    new_selected_model = new_model_list[0] if new_model_list else ""
+                print(f"  Saving - New Model List: {new_model_list}, Selected: {new_selected_model}")
+
+                # Save config
                 config.save_config(
-                    api_key, api_url, model_id, auto_startup, new_theme,
-                    include_cli_context, include_timestamp # Pass timestamp
+                    api_key, api_url, model_id_string, auto_startup, new_theme,
+                    include_cli_context, include_timestamp,
+                    selected_model_id=new_selected_model
                 )
-                print(f"Configuration saved. New theme: {new_theme}, AutoStart: {auto_startup}, Model: {model_id}, CLI Context: {include_cli_context}, Timestamp: {include_timestamp}") # Updated print
+                print(f"Configuration saved. New theme: {new_theme}, AutoStart: {auto_startup}, ModelList: {model_id_string}, SelectedModel: {new_selected_model}, CLI Context: {include_cli_context}, Timestamp: {include_timestamp}")
             else:
                 print("Settings dialog accepted, but no changes detected in values.")
 
-            self.update_model_id_display() # Update model display in toolbar
+            self.update_model_selector() # Update model display in toolbar
 
             theme_changed = new_theme != current_theme_before
             if theme_changed:
@@ -813,7 +895,7 @@ class MainWindow(QMainWindow):
 
             if should_reload_state:
                 print("Reset or API key removal detected. Re-loading state and syncing CWD.")
-                self.load_state()
+                self.load_state() # This loads history, CWD, CLI history
                 try:
                     if os.path.isdir(self.current_directory):
                         os.chdir(self.current_directory)
@@ -828,19 +910,22 @@ class MainWindow(QMainWindow):
                              print(f"CRITICAL: Could not even change to initial directory '{self.current_directory}': {e_chdir_fallback}")
                              self.current_directory = os.getcwd()
                              print(f"Using current OS CWD as final fallback: {self.current_directory}")
-                         self.save_state()
+                         self.save_state() # Save the fallback CWD
                 except Exception as e:
                     print(f"CRITICAL: Error setting process CWD after settings reset/change to '{self.current_directory}': {e}")
                 self.load_and_apply_state() # Apply history etc.
+                self.update_model_selector() # Refresh model selector after reset
+
+            elif config_changed: # Check if other config changed (incl. model list)
+                 print("Configuration changed, reapplying styles and updating model selector.")
+                 self.apply_theme_specific_styles() # Reapply styles if other settings changed
+                 self.update_model_selector() # Ensure model list is up-to-date
 
             elif theme_changed:
                 print("Theme changed, styles already applied.")
-            elif config_changed:
-                 print("Other configuration changed, reapplying styles for consistency.")
-                 self.apply_theme_specific_styles() # Reapply styles if other settings changed
 
-            self.update_cwd_label() # Ensure CWD label is up-to-date
-            print("CWD display updated after settings dialog.")
+            self.update_prompt() # Ensure CLI prompt is up-to-date
+            print("CLI Prompt display updated after settings dialog.")
 
         else:
             print("Settings dialog cancelled.")
@@ -851,24 +936,54 @@ class MainWindow(QMainWindow):
 
     # --- State Management ---
     def save_state(self):
-        # Saves chat history, CLI history, current directory, and splitter state
+        """Saves chat history, CLI history, current directory, splitter state, and selected model."""
         if self._closing: print("Skipping save_state during close sequence."); return
         try:
-            settings = config.get_settings();
+            settings = config.get_settings()
             history_list = list(self.conversation_history)
+
+            # Save UI/History State
             settings.beginGroup("state")
             settings.setValue("conversation_history", json.dumps(history_list))
             settings.setValue("current_directory", self.current_directory)
             settings.setValue("cli_history", json.dumps(list(self.cli_command_history)))
             settings.endGroup()
-            if self.splitter: settings.beginGroup("ui"); settings.setValue("splitter_state", self.splitter.saveState()); settings.endGroup()
-            else: print("Warning: Could not find splitter to save state.")
-            settings.sync();
-            print(f"State saved: Chat History({len(history_list)}), CWD({self.current_directory}), CLI History({len(self.cli_command_history)})")
-        except Exception as e: print(f"Error saving state: {e}")
+
+            # Save UI Geometry/Splitter State
+            if self.splitter:
+                settings.beginGroup("ui")
+                settings.setValue("splitter_state", self.splitter.saveState())
+                settings.endGroup()
+            else:
+                print("Warning: Could not find splitter to save state.")
+
+            # Save currently selected model to config
+            current_config_vals = config.get_current_config()
+            current_selected_model = config.CURRENTLY_SELECTED_MODEL_ID
+
+            # Call save_config, passing the current values and the updated selected model
+            config.save_config(
+                api_key=current_config_vals["api_key"],
+                api_url=current_config_vals["api_url"],
+                model_id_string=current_config_vals["model_id_string"],
+                auto_startup=current_config_vals["auto_startup"],
+                theme=current_config_vals["theme"],
+                include_cli_context=current_config_vals["include_cli_context"],
+                include_timestamp=current_config_vals["include_timestamp_in_prompt"],
+                selected_model_id=current_selected_model # Pass the selection to be saved
+            )
+
+            settings.sync()
+            print(f"State saved: Chat History({len(history_list)}), CWD({self.current_directory}), CLI History({len(self.cli_command_history)}), SelectedModel({current_selected_model})")
+
+        except Exception as e:
+            print(f"Error saving state: {e}")
+            import traceback
+            traceback.print_exc() # Print stack trace for debugging
+
 
     def load_state(self):
-        # Loads state on startup
+        # Loads state on startup (CWD, histories). Selected model is loaded by config.load_config()
         if self._closing: return
         print("Loading state (CWD, History, CLI History)...")
         try:
@@ -879,12 +994,14 @@ class MainWindow(QMainWindow):
             cli_history_json = settings.value("cli_history", "[]");
             settings.endGroup()
 
+            # Load CWD
             if saved_cwd and isinstance(saved_cwd, str):
                 if os.path.isdir(saved_cwd): restored_cwd = saved_cwd
                 else: print(f"Warning: Saved directory '{saved_cwd}' not found or invalid. Using initial directory.")
             else: print("No valid saved directory found. Using initial directory.")
             self.current_directory = os.path.normpath(restored_cwd); print(f"Effective internal CWD state after loading: {self.current_directory}")
 
+            # Load Chat History
             loaded_history = []
             try:
                  if isinstance(history_json, (list, tuple)): history_list = history_json
@@ -895,6 +1012,7 @@ class MainWindow(QMainWindow):
             except Exception as e: print(f"Error processing saved conversation history: {e}.")
             self.conversation_history = deque(loaded_history, maxlen=self.conversation_history.maxlen)
 
+            # Load CLI History
             loaded_cli_history = []
             try:
                 if isinstance(cli_history_json, list): cli_history_list = cli_history_json
@@ -954,7 +1072,7 @@ class MainWindow(QMainWindow):
             else: print("Warning: Worker thread(s) did not finish within the timeout.")
 
         print("Saving final state before closing...")
-        self.save_state()
+        self.save_state() # This now includes saving the selected model via config.save_config
 
         print("Exiting application.")
         event.accept()

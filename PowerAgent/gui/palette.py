@@ -1,5 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/palette.py
+# (No changes needed in this file for this feature)
 # -----------------------------------------------------------------------
 # gui/palette.py
 # -*- coding: utf-8 -*-
