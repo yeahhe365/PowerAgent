@@ -1,6 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/core/config.py
-# (MODIFIED)
+# (MODIFIED - Added MULTI_STEP_MAX_ITERATIONS config)
 # ---------------------------------------
 # core/config.py
 # -*- coding: utf-8 -*-
@@ -18,15 +18,15 @@ from .autostart import set_auto_startup
 # --- Default Values ---
 DEFAULT_API_KEY: str = ""
 DEFAULT_API_URL: str = ""
-# <<< MODIFIED: Default for comma-separated string >>>
 DEFAULT_MODEL_ID_STRING: str = ""
 DEFAULT_CURRENTLY_SELECTED_MODEL_ID: str = ""
-# <<< END MODIFICATION >>>
 DEFAULT_AUTO_STARTUP_ENABLED: bool = False
 DEFAULT_APP_THEME: str = "system" # Default theme is system
 DEFAULT_INCLUDE_CLI_CONTEXT: bool = True
-# <<< MODIFICATION START: Add default for timestamp inclusion >>>
 DEFAULT_INCLUDE_TIMESTAMP: bool = False # Default to NOT include timestamp
+DEFAULT_ENABLE_MULTI_STEP: bool = False
+# <<< MODIFICATION START: Add default for max iterations >>>
+DEFAULT_MULTI_STEP_MAX_ITERATIONS: int = 5 # Default max iterations
 # <<< MODIFICATION END >>>
 
 
@@ -34,15 +34,15 @@ DEFAULT_INCLUDE_TIMESTAMP: bool = False # Default to NOT include timestamp
 # Initialize with defaults
 API_KEY: str = DEFAULT_API_KEY
 API_URL: str = DEFAULT_API_URL
-# <<< MODIFIED: Global state variables >>>
 MODEL_ID_STRING: str = DEFAULT_MODEL_ID_STRING
 CURRENTLY_SELECTED_MODEL_ID: str = DEFAULT_CURRENTLY_SELECTED_MODEL_ID
-# <<< END MODIFICATION >>>
 AUTO_STARTUP_ENABLED: bool = DEFAULT_AUTO_STARTUP_ENABLED
 APP_THEME: str = DEFAULT_APP_THEME
 INCLUDE_CLI_CONTEXT: bool = DEFAULT_INCLUDE_CLI_CONTEXT
-# <<< MODIFICATION START: Add global state for timestamp >>>
 INCLUDE_TIMESTAMP_IN_PROMPT: bool = DEFAULT_INCLUDE_TIMESTAMP
+ENABLE_MULTI_STEP: bool = DEFAULT_ENABLE_MULTI_STEP
+# <<< MODIFICATION START: Add global state for max iterations >>>
+MULTI_STEP_MAX_ITERATIONS: int = DEFAULT_MULTI_STEP_MAX_ITERATIONS
 # <<< MODIFICATION END >>>
 
 
@@ -63,10 +63,11 @@ def load_config() -> tuple[bool, str]:
     Returns:
         tuple: (bool: success, str: message)
     """
-    # <<< MODIFIED: Global variable list >>>
     global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< END MODIFICATION >>>
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT, ENABLE_MULTI_STEP
+    # <<< MODIFICATION START: Add max iterations global >>>
+    global MULTI_STEP_MAX_ITERATIONS
+    # <<< MODIFICATION END >>>
 
     print("Loading configuration from QSettings (INI format)...")
     settings = get_settings()
@@ -78,9 +79,7 @@ def load_config() -> tuple[bool, str]:
     settings.beginGroup("api")
     API_KEY = settings.value("key", DEFAULT_API_KEY)
     API_URL = settings.value("url", DEFAULT_API_URL)
-    # <<< MODIFIED: Load model_id_string >>>
-    MODEL_ID_STRING = settings.value("model_id_string", DEFAULT_MODEL_ID_STRING) # Changed key name
-    # <<< END MODIFICATION >>>
+    MODEL_ID_STRING = settings.value("model_id_string", DEFAULT_MODEL_ID_STRING)
     settings.endGroup()
 
     # Load General settings
@@ -88,11 +87,20 @@ def load_config() -> tuple[bool, str]:
     AUTO_STARTUP_ENABLED = settings.value("auto_startup", DEFAULT_AUTO_STARTUP_ENABLED, type=bool)
     loaded_theme = settings.value("theme", DEFAULT_APP_THEME, type=str)
     INCLUDE_CLI_CONTEXT = settings.value("include_cli_context", DEFAULT_INCLUDE_CLI_CONTEXT, type=bool)
-    # <<< MODIFIED: Load selected model >>>
-    CURRENTLY_SELECTED_MODEL_ID = settings.value("selected_model", DEFAULT_CURRENTLY_SELECTED_MODEL_ID) # New key
-    # <<< END MODIFICATION >>>
-    # <<< MODIFICATION START: Load timestamp setting >>>
+    CURRENTLY_SELECTED_MODEL_ID = settings.value("selected_model", DEFAULT_CURRENTLY_SELECTED_MODEL_ID)
     INCLUDE_TIMESTAMP_IN_PROMPT = settings.value("include_timestamp", DEFAULT_INCLUDE_TIMESTAMP, type=bool)
+    ENABLE_MULTI_STEP = settings.value("enable_multi_step", DEFAULT_ENABLE_MULTI_STEP, type=bool)
+    # <<< MODIFICATION START: Load max iterations >>>
+    try:
+        # Load as int, fallback to default if conversion fails or value is invalid
+        loaded_iterations = settings.value("multi_step_max_iterations", DEFAULT_MULTI_STEP_MAX_ITERATIONS)
+        MULTI_STEP_MAX_ITERATIONS = int(loaded_iterations)
+        if MULTI_STEP_MAX_ITERATIONS < 1: # Ensure at least 1 iteration
+            print(f"Warning: Invalid multi_step_max_iterations value ({MULTI_STEP_MAX_ITERATIONS}) loaded. Resetting to default ({DEFAULT_MULTI_STEP_MAX_ITERATIONS}).")
+            MULTI_STEP_MAX_ITERATIONS = DEFAULT_MULTI_STEP_MAX_ITERATIONS
+    except (ValueError, TypeError):
+        print(f"Warning: Could not parse multi_step_max_iterations value ('{loaded_iterations}'). Resetting to default ({DEFAULT_MULTI_STEP_MAX_ITERATIONS}).")
+        MULTI_STEP_MAX_ITERATIONS = DEFAULT_MULTI_STEP_MAX_ITERATIONS
     # <<< MODIFICATION END >>>
     settings.endGroup()
 
@@ -104,53 +112,46 @@ def load_config() -> tuple[bool, str]:
     else:
         APP_THEME = loaded_theme
 
-    # <<< MODIFIED: Validate selected model ID against the list >>>
-    # Ensure the loaded selected model is actually in the list of available models
+    # Validate selected model ID against the list
     available_models = [m.strip() for m in MODEL_ID_STRING.split(',') if m.strip()]
     if CURRENTLY_SELECTED_MODEL_ID and CURRENTLY_SELECTED_MODEL_ID not in available_models:
         print(f"Warning: Saved selected model '{CURRENTLY_SELECTED_MODEL_ID}' is not in the available list {available_models}. Resetting selection.")
         CURRENTLY_SELECTED_MODEL_ID = available_models[0] if available_models else ""
-        # Optionally save this correction back immediately, though update_model_selector in main_window will handle it too.
-        # settings.beginGroup("general")
-        # settings.setValue("selected_model", CURRENTLY_SELECTED_MODEL_ID)
-        # settings.endGroup()
-        # settings.sync()
     elif not CURRENTLY_SELECTED_MODEL_ID and available_models:
-         # If no model was selected but models are available, select the first one
          print(f"No model previously selected, defaulting to first available: '{available_models[0]}'")
          CURRENTLY_SELECTED_MODEL_ID = available_models[0]
-         # Optionally save this default back
-         # settings.beginGroup("general")
-         # settings.setValue("selected_model", CURRENTLY_SELECTED_MODEL_ID)
-         # settings.endGroup()
-         # settings.sync()
 
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Configuration loaded - Theme: {APP_THEME}, AutoStart: {AUTO_STARTUP_ENABLED}, IncludeCLIContext: {INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp: {INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel: {CURRENTLY_SELECTED_MODEL_ID}")
+    print(f"Configuration loaded - Theme: {APP_THEME}, AutoStart: {AUTO_STARTUP_ENABLED}, "
+          f"IncludeCLIContext: {INCLUDE_CLI_CONTEXT}, IncludeTimestamp: {INCLUDE_TIMESTAMP_IN_PROMPT}, "
+          f"EnableMultiStep: {ENABLE_MULTI_STEP}, MaxIterations: {MULTI_STEP_MAX_ITERATIONS}, " # Added MaxIterations
+          f"SelectedModel: {CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
-    # Check if API configuration is incomplete (API Key/URL still needed)
-    if not API_KEY or not API_URL: # Removed MODEL_ID check here, as list might be empty intentionally initially
+    # Check if API configuration is incomplete
+    if not API_KEY or not API_URL:
         print("API Key/URL configuration is incomplete in QSettings.")
         return False, "API Key/URL configuration incomplete. Please configure in Settings."
     if not MODEL_ID_STRING:
         print("Model ID list is empty. Please configure in Settings to use AI features.")
-        # Return True, but message indicates models needed
         return True, "Configuration loaded, but Model ID list is empty."
 
     print("Configuration loaded successfully from QSettings.")
     return True, "Configuration loaded successfully."
 
 
-# <<< MODIFIED: Signature changed to accept model_id_string and selected_model_id >>>
+# <<< MODIFICATION START: Add multi_step_max_iterations to signature >>>
 def save_config(api_key: str, api_url: str, model_id_string: str, auto_startup: bool, theme: str,
-                include_cli_context: bool, include_timestamp: bool, selected_model_id: str):
-# <<< END MODIFICATION >>>
+                include_cli_context: bool, include_timestamp: bool, enable_multi_step: bool,
+                multi_step_max_iterations: int, # Added parameter
+                selected_model_id: str):
+# <<< MODIFICATION END >>>
     """Saves configuration to QSettings (INI format) and updates globals."""
-    # <<< MODIFIED: Global variable list >>>
     global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< END MODIFICATION >>>
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT, ENABLE_MULTI_STEP
+    # <<< MODIFICATION START: Add max iterations global >>>
+    global MULTI_STEP_MAX_ITERATIONS
+    # <<< MODIFICATION END >>>
 
     print("Saving configuration to QSettings (INI format)...")
     settings = get_settings()
@@ -158,9 +159,7 @@ def save_config(api_key: str, api_url: str, model_id_string: str, auto_startup: 
     settings.beginGroup("api")
     settings.setValue("key", api_key)
     settings.setValue("url", api_url)
-    # <<< MODIFIED: Save model_id_string >>>
-    settings.setValue("model_id_string", model_id_string) # Changed key name
-    # <<< END MODIFICATION >>>
+    settings.setValue("model_id_string", model_id_string)
     settings.endGroup()
 
     settings.beginGroup("general")
@@ -169,11 +168,13 @@ def save_config(api_key: str, api_url: str, model_id_string: str, auto_startup: 
     valid_theme = theme if theme in valid_themes else DEFAULT_APP_THEME
     settings.setValue("theme", valid_theme)
     settings.setValue("include_cli_context", include_cli_context)
-    # <<< MODIFIED: Save selected model >>>
-    settings.setValue("selected_model", selected_model_id) # New key
-    # <<< END MODIFICATION >>>
-    # <<< MODIFICATION START: Save timestamp setting >>>
+    settings.setValue("selected_model", selected_model_id)
     settings.setValue("include_timestamp", include_timestamp)
+    settings.setValue("enable_multi_step", enable_multi_step)
+    # <<< MODIFICATION START: Save max iterations >>>
+    # Ensure saved value is at least 1
+    save_iterations = max(1, multi_step_max_iterations)
+    settings.setValue("multi_step_max_iterations", save_iterations)
     # <<< MODIFICATION END >>>
     settings.endGroup()
 
@@ -186,19 +187,22 @@ def save_config(api_key: str, api_url: str, model_id_string: str, auto_startup: 
 
     # Update global variables immediately after saving
     API_KEY, API_URL = api_key, api_url
-    # <<< MODIFIED: Update globals >>>
     MODEL_ID_STRING = model_id_string
     CURRENTLY_SELECTED_MODEL_ID = selected_model_id
-    # <<< END MODIFICATION >>>
     AUTO_STARTUP_ENABLED = auto_startup
     APP_THEME = valid_theme
     INCLUDE_CLI_CONTEXT = include_cli_context
-    # <<< MODIFICATION START: Update timestamp global >>>
     INCLUDE_TIMESTAMP_IN_PROMPT = include_timestamp
+    ENABLE_MULTI_STEP = enable_multi_step
+    # <<< MODIFICATION START: Update max iterations global >>>
+    MULTI_STEP_MAX_ITERATIONS = save_iterations # Use the validated value
     # <<< MODIFICATION END >>>
 
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Config state updated: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
+    print(f"Config state updated: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, "
+          f"IncludeCLIContext={INCLUDE_CLI_CONTEXT}, IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, "
+          f"EnableMultiStep={ENABLE_MULTI_STEP}, MaxIterations={MULTI_STEP_MAX_ITERATIONS}, " # Added MaxIterations
+          f"SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
     # Apply auto-startup change using the saved value
@@ -211,10 +215,11 @@ def reset_to_defaults_and_clear_cache():
     Resets all settings in QSettings to their defaults and clears cached state.
     Also updates the global variables in this module.
     """
-    # <<< MODIFIED: Global variable list >>>
     global API_KEY, API_URL, MODEL_ID_STRING, CURRENTLY_SELECTED_MODEL_ID, AUTO_STARTUP_ENABLED, APP_THEME
-    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT
-    # <<< END MODIFICATION >>>
+    global INCLUDE_CLI_CONTEXT, INCLUDE_TIMESTAMP_IN_PROMPT, ENABLE_MULTI_STEP
+    # <<< MODIFICATION START: Add max iterations global >>>
+    global MULTI_STEP_MAX_ITERATIONS
+    # <<< MODIFICATION END >>>
 
     print("Resetting all settings and clearing cache...")
     settings = get_settings()
@@ -231,19 +236,22 @@ def reset_to_defaults_and_clear_cache():
     # Reset global variables to defaults
     API_KEY = DEFAULT_API_KEY
     API_URL = DEFAULT_API_URL
-    # <<< MODIFIED: Reset globals >>>
     MODEL_ID_STRING = DEFAULT_MODEL_ID_STRING
     CURRENTLY_SELECTED_MODEL_ID = DEFAULT_CURRENTLY_SELECTED_MODEL_ID
-    # <<< END MODIFICATION >>>
     AUTO_STARTUP_ENABLED = DEFAULT_AUTO_STARTUP_ENABLED
     APP_THEME = DEFAULT_APP_THEME
     INCLUDE_CLI_CONTEXT = DEFAULT_INCLUDE_CLI_CONTEXT
-    # <<< MODIFICATION START: Reset timestamp global >>>
     INCLUDE_TIMESTAMP_IN_PROMPT = DEFAULT_INCLUDE_TIMESTAMP
+    ENABLE_MULTI_STEP = DEFAULT_ENABLE_MULTI_STEP
+    # <<< MODIFICATION START: Reset max iterations global >>>
+    MULTI_STEP_MAX_ITERATIONS = DEFAULT_MULTI_STEP_MAX_ITERATIONS
     # <<< MODIFICATION END >>>
 
     # <<< MODIFICATION START: Update print message >>>
-    print(f"Global config state reset to defaults: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, IncludeCLIContext={INCLUDE_CLI_CONTEXT} (Full context), IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
+    print(f"Global config state reset to defaults: AutoStart={AUTO_STARTUP_ENABLED}, Theme={APP_THEME}, "
+          f"IncludeCLIContext={INCLUDE_CLI_CONTEXT}, IncludeTimestamp={INCLUDE_TIMESTAMP_IN_PROMPT}, "
+          f"EnableMultiStep={ENABLE_MULTI_STEP}, MaxIterations={MULTI_STEP_MAX_ITERATIONS}, " # Added MaxIterations
+          f"SelectedModel={CURRENTLY_SELECTED_MODEL_ID}")
     # <<< MODIFICATION END >>>
 
     # Explicitly disable auto-startup via the platform-specific mechanism
@@ -256,15 +264,17 @@ def reset_to_defaults_and_clear_cache():
 
 def get_current_config() -> dict:
     """Returns the current configuration values held in this module."""
-    # <<< MODIFIED: Return new structure >>>
+    # <<< MODIFICATION START: Add max iterations to returned dict >>>
     return {
         "api_key": API_KEY,
         "api_url": API_URL,
-        "model_id_string": MODEL_ID_STRING, # Renamed key
-        "currently_selected_model_id": CURRENTLY_SELECTED_MODEL_ID, # Added key
+        "model_id_string": MODEL_ID_STRING,
+        "currently_selected_model_id": CURRENTLY_SELECTED_MODEL_ID,
         "auto_startup": AUTO_STARTUP_ENABLED,
         "theme": APP_THEME,
         "include_cli_context": INCLUDE_CLI_CONTEXT,
-        "include_timestamp_in_prompt": INCLUDE_TIMESTAMP_IN_PROMPT, # Timestamp key
+        "include_timestamp_in_prompt": INCLUDE_TIMESTAMP_IN_PROMPT,
+        "enable_multi_step": ENABLE_MULTI_STEP,
+        "multi_step_max_iterations": MULTI_STEP_MAX_ITERATIONS, # Added field
     }
-    # <<< END MODIFICATION >>>
+    # <<< MODIFICATION END >>>

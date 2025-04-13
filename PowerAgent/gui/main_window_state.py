@@ -1,6 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/gui/main_window_state.py
-# (NEW FILE - Contains state management methods)
+# (MODIFIED - Updated CWD loading logic to fallback to initial_directory)
 # ----------------------------------------
 # gui/main_window_state.py
 # -*- coding: utf-8 -*-
@@ -32,6 +32,7 @@ class StateMixin:
             # --- Save UI/History State to QSettings ---
             settings.beginGroup("state")
             settings.setValue("conversation_history", json.dumps(history_list))
+            # Always save the *current* directory, whatever it is
             settings.setValue("current_directory", self.current_directory)
             settings.setValue("cli_history", json.dumps(list(self.cli_command_history)))
             settings.endGroup()
@@ -61,15 +62,20 @@ class StateMixin:
 
         except Exception as e:
             print(f"Error saving state: {e}")
-            traceback.print_exc() # Print stack trace for debugging state saving
+            traceback.print_exc()
 
     def load_state(self: 'MainWindow'):
-        # Loads state on startup (CWD, chat history, CLI history).
+        """
+        Loads state on startup (CWD, chat history, CLI history).
+        Sets self.current_directory based on saved state or falls back to self.initial_directory.
+        The actual process CWD change happens later in __init__ using _sync_process_cwd.
+        """
         if self._closing: return
         print("Loading state (CWD, Chat History, CLI History)...")
         try:
             settings = config.get_settings()
-            restored_cwd = self.initial_directory # Default to initial dir
+            # Default to the initial directory ('Space') if nothing valid is loaded
+            restored_cwd = self.initial_directory
 
             # --- Load State Group ---
             settings.beginGroup("state")
@@ -78,17 +84,22 @@ class StateMixin:
             cli_history_json = settings.value("cli_history", "[]")
             settings.endGroup()
 
-            # --- Load CWD ---
-            if saved_cwd and isinstance(saved_cwd, str):
-                if os.path.isdir(saved_cwd): # Check if saved directory exists
-                    restored_cwd = saved_cwd
+            # --- Load and Validate CWD ---
+            if saved_cwd and isinstance(saved_cwd, str) and saved_cwd.strip():
+                normalized_saved_cwd = os.path.normpath(saved_cwd)
+                if os.path.isdir(normalized_saved_cwd): # Check if saved directory exists and is a directory
+                    restored_cwd = normalized_saved_cwd
+                    print(f"Found valid saved directory: {restored_cwd}")
                 else:
-                    print(f"Warning: Saved directory '{saved_cwd}' not found or invalid. Using initial directory '{self.initial_directory}'.")
+                    print(f"Warning: Saved directory '{normalized_saved_cwd}' not found or invalid. Using default directory '{self.initial_directory}'.")
+                    # restored_cwd remains self.initial_directory
             else:
-                print(f"No valid saved directory found. Using initial directory '{self.initial_directory}'.")
-            self.current_directory = os.path.normpath(restored_cwd)
-            print(f"Internal CWD state set to: {self.current_directory}")
-            # Actual process CWD change happens in __init__ after this call
+                print(f"No valid saved directory found in settings. Using default directory '{self.initial_directory}'.")
+                # restored_cwd remains self.initial_directory
+
+            # Set the internal current directory state based on loading result
+            self.current_directory = restored_cwd
+            print(f"Internal CWD state set to: {self.current_directory} (will attempt chdir later)")
 
             # --- Load Chat History ---
             loaded_history = []
@@ -101,16 +112,12 @@ class StateMixin:
                      loaded_history = history_list
                      print(f"Loaded {len(loaded_history)} conversation history items.")
                  elif history_json != "[]":
-                     print(f"Warning: Saved conversation history format invalid. Content: '{history_json[:100]}...'")
-            except json.JSONDecodeError as e:
-                 print(f"Error decoding saved conversation history JSON: {e}. Content: '{history_json[:100]}...'")
-            except Exception as e:
-                 print(f"Error processing saved conversation history: {e}.")
-            # Initialize conversation_history if it doesn't exist yet (important!)
+                     print(f"Warning: Saved conversation history format invalid.")
+            except Exception as e: print(f"Error processing saved conversation history: {e}.")
+            # Initialize conversation_history if it doesn't exist yet
             if not hasattr(self, 'conversation_history') or not isinstance(self.conversation_history, deque):
-                self.conversation_history = deque(maxlen=50) # Use the original maxlen
-            self.conversation_history.clear()
-            self.conversation_history.extend(loaded_history)
+                self.conversation_history = deque(maxlen=50)
+            self.conversation_history.clear(); self.conversation_history.extend(loaded_history)
 
             # --- Load CLI History ---
             loaded_cli_history = []
@@ -120,28 +127,21 @@ class StateMixin:
                 if isinstance(cli_history_list, list) and all(isinstance(item, str) for item in cli_history_list):
                     loaded_cli_history = cli_history_list
                     print(f"Loaded {len(loaded_cli_history)} CLI history items.")
-                elif cli_history_json != "[]":
-                    print(f"Warning: Saved CLI history format invalid. Content: '{cli_history_json[:100]}...'")
-            except json.JSONDecodeError as e:
-                print(f"Error decoding saved CLI history JSON: {e}. Content: '{cli_history_json[:100]}...'")
-            except Exception as e:
-                print(f"Error processing saved CLI history: {e}.")
+                elif cli_history_json != "[]": print(f"Warning: Saved CLI history format invalid.")
+            except Exception as e: print(f"Error processing saved CLI history: {e}.")
             # Initialize cli_command_history if it doesn't exist yet
             if not hasattr(self, 'cli_command_history') or not isinstance(self.cli_command_history, deque):
-                self.cli_command_history = deque(maxlen=100) # Use the original maxlen
-            self.cli_command_history.clear()
-            self.cli_command_history.extend(loaded_cli_history)
+                self.cli_command_history = deque(maxlen=100)
+            self.cli_command_history.clear(); self.cli_command_history.extend(loaded_cli_history)
             self.cli_history_index = -1 # Reset navigation index
 
         except Exception as e:
             print(f"CRITICAL Error loading state: {e}. Resetting state variables.")
             traceback.print_exc()
-            # Initialize deques if necessary before clearing
-            if not hasattr(self, 'conversation_history') or not isinstance(self.conversation_history, deque):
-                self.conversation_history = deque(maxlen=50)
-            if not hasattr(self, 'cli_command_history') or not isinstance(self.cli_command_history, deque):
-                self.cli_command_history = deque(maxlen=100)
-            self.conversation_history.clear()
-            self.cli_command_history.clear()
-            self.cli_history_index = -1
+            # Ensure deques exist before clearing
+            if not hasattr(self, 'conversation_history') or not isinstance(self.conversation_history, deque): self.conversation_history = deque(maxlen=50)
+            if not hasattr(self, 'cli_command_history') or not isinstance(self.cli_command_history, deque): self.cli_command_history = deque(maxlen=100)
+            self.conversation_history.clear(); self.cli_command_history.clear(); self.cli_history_index = -1
+            # Ensure CWD defaults to the 'Space' directory even after error
             self.current_directory = self.initial_directory
+            print(f"Internal CWD state reset to default due to error: {self.current_directory}")

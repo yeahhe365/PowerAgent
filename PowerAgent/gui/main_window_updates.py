@@ -1,20 +1,21 @@
 # ========================================
 # 文件名: PowerAgent/gui/main_window_updates.py
-# (MODIFIED - Updated add_cli_output for User/Model coloring)
+# (MODIFIED - Updated add_chat_message to handle 'ai_command' role formatting)
 # ----------------------------------------
 # gui/main_window_updates.py
 # -*- coding: utf-8 -*-
 
 import os
 import platform
-import re  # <<< Added import for regular expressions
+import re
+import json
+import html
 from typing import TYPE_CHECKING
 from collections import deque
 
 from PySide6.QtWidgets import QApplication
-# <<< Added missing imports for text formatting and colors >>>
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextCursor, QTextCharFormat, QColor, QPalette, QIcon, QFont
+from PySide6.QtGui import QTextCursor, QTextCharFormat, QColor, QPalette, QIcon, QFont, QBrush
 
 # Import necessary components from the project
 from constants import APP_NAME, get_color
@@ -147,6 +148,7 @@ class UpdatesMixin:
             self.conversation_history.clear() # Clear internal deque before re-adding
             # Re-add messages using the standard method to ensure formatting
             for role, message in history_copy:
+                # Use the updated add_chat_message which handles formatting
                 self.add_chat_message(role, message, add_to_internal_history=True)
             print("Loaded history applied to display and internal history deque.")
         else:
@@ -198,8 +200,6 @@ class UpdatesMixin:
             return
 
         print("Updating model selector...")
-        # Store current selection text before clearing to potentially restore it
-        # current_text = self.model_selector_combo.currentText() # Less reliable if list changes
         saved_selected_model = config.CURRENTLY_SELECTED_MODEL_ID # Use config value
 
         self.model_selector_combo.blockSignals(True) # Prevent signals during update
@@ -209,38 +209,27 @@ class UpdatesMixin:
         model_id_string = config.MODEL_ID_STRING
         model_list = []
         if model_id_string:
-            # Split by comma and remove whitespace from each item
             model_list = [m.strip() for m in model_id_string.split(',') if m.strip()]
 
         if not model_list:
-            # No models configured
             placeholder_text = "未配置模型"
             self.model_selector_combo.addItem(placeholder_text)
             self.model_selector_combo.setEnabled(False)
-            # If config thought a model was selected, clear it now
             if config.CURRENTLY_SELECTED_MODEL_ID != "":
                 config.CURRENTLY_SELECTED_MODEL_ID = ""
             print("Model selector updated: No models configured.")
         else:
-            # Populate combobox with models
             self.model_selector_combo.addItems(model_list)
             self.model_selector_combo.setEnabled(True)
-
-            # Try to restore the previously selected model from config
             found_index = self.model_selector_combo.findText(saved_selected_model)
-
             if saved_selected_model and found_index != -1:
-                # Saved selection is valid and exists in the new list
                 self.model_selector_combo.setCurrentIndex(found_index)
                 print(f"Model selector updated: Restored selection '{saved_selected_model}'.")
             else:
-                # Saved selection is invalid, not found, or was empty. Default to the first item.
                 default_model = model_list[0]
                 self.model_selector_combo.setCurrentIndex(0)
                 print(f"Model selector updated: Saved model '{saved_selected_model}' not found/invalid. Defaulting to '{default_model}'.")
-                # Update the config's in-memory state immediately
                 config.CURRENTLY_SELECTED_MODEL_ID = default_model
-                # No need to call save_state() here, will be saved on close or explicit save
 
         self.model_selector_combo.blockSignals(False) # Re-enable signals
 
@@ -248,112 +237,203 @@ class UpdatesMixin:
         """Updates the custom status indicator widget's state."""
         if self._closing or not self.status_indicator:
             return
-        # Ensure status_indicator is the correct type before calling setBusy
         if hasattr(self.status_indicator, 'setBusy') and callable(self.status_indicator.setBusy):
-             self.status_indicator.setBusy(busy) # Delegate to the widget's method
+             self.status_indicator.setBusy(busy)
         else:
              print(f"Warning: status_indicator is not a StatusIndicatorWidget or does not have setBusy method. Type: {type(self.status_indicator)}")
 
-
-    def add_chat_message(self: 'MainWindow', role: str, message: str, add_to_internal_history: bool = True):
-        # Adds message to the chat display (right pane) AND internal history deque
+    # ============================================================= #
+    # <<< MODIFIED add_chat_message METHOD >>>
+    # ============================================================= #
+    def add_chat_message(
+        self: 'MainWindow',
+        role: str,
+        message: str,
+        add_to_internal_history: bool = True,
+        elapsed_time: float | None = None # Time for AI responses
+    ):
+        """Adds message to the chat display, parsing actions and formatting timestamp/commands."""
         if self._closing or not self.chat_history_display:
-            # Still add to internal history if requested, even if UI isn't ready
             if add_to_internal_history:
-                # Remove potential timing info before adding to history
-                message_for_history = re.sub(r"\s*\([\u0041-\uFFFF]+:\s*[\d.]+\s*[\u0041-\uFFFF]+\)$", "", message).strip()
-                # Avoid duplicates if the exact same message (role+content) is last
-                if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
-                    self.conversation_history.append((role, message_for_history))
+                 message_for_history = message.strip()
+                 # Ensure the deque exists before appending
+                 if not hasattr(self, 'conversation_history'): self.conversation_history = deque(maxlen=50)
+                 if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
+                     self.conversation_history.append((role, message_for_history))
             return
 
         target_widget = self.chat_history_display
-        role_lower = role.lower(); role_display = role.capitalize() # Capitalize role for display
-        # Format message: Role prefix, message content, ensure newline
+        role_lower = role.lower()
+        # Handle role display name (e.g., "AI Command" -> "AI Command")
+        role_display = "AI Command" if role_lower == "ai command" else role.capitalize() # Specific handling for "AI Command"
         prefix_text = f"{role_display}: "
-        message_text = message.rstrip() + '\n'
+        message_content = message.rstrip() # Process this content
 
         # Move cursor to end safely
         try:
             cursor = target_widget.textCursor()
-            at_end = cursor.atEnd() # Check if already at end before moving
+            at_end = cursor.atEnd()
             cursor.movePosition(QTextCursor.MoveOperation.End)
             target_widget.setTextCursor(cursor)
         except RuntimeError:
             print("Warning: Could not get/set text cursor for chat display.")
             return
 
-        # Determine colors based on role and theme
+        # --- Setup Text Formats ---
         current_theme = config.APP_THEME
-        char_format = QTextCharFormat()
-        default_text_color = target_widget.palette().color(QPalette.ColorRole.Text) # Get default text color from palette
-        prefix_color = None
-        message_color = default_text_color # Default message color is standard text color
+        default_text_color = target_widget.palette().color(QPalette.ColorRole.Text)
+        default_font_size = target_widget.font().pointSize()
+        if default_font_size <= 0: default_font_size = 10 # Fallback font size
 
-        # Assign prefix color based on role using constants.py
-        if role_lower == 'user':
-            prefix_color = get_color('user', current_theme)
-        elif role_lower == 'model':
-            prefix_color = get_color('model', current_theme)
-        elif role_lower in ['system', 'error', 'help', 'prompt']:
-            prefix_color = get_color(role_lower, current_theme)
-            message_color = prefix_color # For these types, message uses the same color
-        else: # Default for unknown roles
-            prefix_color = get_color('system', current_theme) # Use system color
-            message_color = prefix_color
-
-        # Ensure colors are valid QColor objects, fallback to default if needed
+        # Prefix Format (Bold, Role Color)
+        prefix_format = QTextCharFormat()
+        # <<< MODIFIED: Correct role lookup for color >>>
+        valid_color_roles = ['user', 'model', 'system', 'error', 'help', 'prompt', 'ai_command', 'keyboard_action']
+        prefix_color_role_key = role_lower if role_lower in valid_color_roles else 'system' # Default to system color
+        prefix_color = get_color(prefix_color_role_key, current_theme)
+        # <<< END MODIFICATION >>>
         if not isinstance(prefix_color, QColor): prefix_color = default_text_color
+        prefix_format.setForeground(prefix_color)
+        prefix_font = prefix_format.font(); prefix_font.setBold(True); prefix_format.setFont(prefix_font)
+
+        # Message Format (Normal Weight, Role Color for some, default otherwise)
+        message_format = QTextCharFormat()
+        message_color = default_text_color
+        # <<< MODIFIED: Use specific ai_command color for message text >>>
+        if role_lower == 'ai command':
+             message_color = get_color('ai_command', current_theme) # Use specific color for the command text itself
+        elif role_lower in ['system', 'error', 'help', 'prompt']:
+             message_color = prefix_color # Inherit color from prefix for these non-command roles
+        elif role_lower == 'model':
+             message_color = get_color('model', current_theme) # Explicit model color
+        elif role_lower == 'user':
+             message_color = get_color('user', current_theme) # Explicit user color
+        # <<< END MODIFICATION >>>
         if not isinstance(message_color, QColor): message_color = default_text_color
+        message_format.setForeground(message_color)
+        message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font)
 
-        # Insert formatted text
+        # --- Keyboard Action Format (with Background) ---
+        kb_action_format = QTextCharFormat()
+        kb_action_color = get_color('keyboard_action', current_theme)
+        kb_action_bg_color = get_color('keyboard_action_bg', current_theme)
+        if not isinstance(kb_action_color, QColor): kb_action_color = get_color('prompt', current_theme)
+        if not isinstance(kb_action_bg_color, QColor): kb_action_bg_color = QColor(Qt.GlobalColor.transparent)
+        kb_action_format.setForeground(kb_action_color)
+        kb_action_format.setBackground(QBrush(kb_action_bg_color))
+        kb_font = kb_action_format.font(); kb_font.setBold(False); kb_action_format.setFont(kb_font)
+
+        # --- Timestamp Format ---
+        timestamp_format = QTextCharFormat()
+        timestamp_color = get_color('timestamp_color', current_theme)
+        if not isinstance(timestamp_color, QColor): timestamp_color = QColor("gray")
+        timestamp_format.setForeground(timestamp_color)
+        timestamp_font = timestamp_format.font()
+        timestamp_font.setPointSize(max(6, default_font_size - 1))
+        timestamp_format.setFont(timestamp_font)
+
+        # --- Insert Prefix ---
         try:
-            # Insert Prefix (Bold)
-            char_format.setForeground(prefix_color)
-            prefix_font = char_format.font(); prefix_font.setBold(True)
-            char_format.setFont(prefix_font)
-            cursor.setCharFormat(char_format)
+            cursor.setCharFormat(prefix_format)
             cursor.insertText(prefix_text)
+        except RuntimeError: print("Warning: Could not insert chat prefix."); return
 
-            # Insert Message (Not Bold)
-            char_format.setForeground(message_color)
-            message_font = char_format.font(); message_font.setBold(False)
-            char_format.setFont(message_font)
-            cursor.setCharFormat(char_format)
-            cursor.insertText(message_text)
-        except RuntimeError:
-            print("Warning: Could not insert chat text.")
-            return
+        # --- Insert Message Content ---
+        last_match_end = 0
+        try:
+            # Parse for Keyboard Actions ONLY if role is 'Model' (or potentially other AI roles if needed)
+            if role_lower == 'model':
+                func_pattern = re.compile(
+                    r"""(<function\s+
+                        call=[\"'](keyboard_\w+|clipboard_paste)[\"'] # Include clipboard_paste
+                        \s+
+                        args=[\"'](.*?)[\"']
+                        \s*
+                        /?
+                        >
+                        (?:</function>)?
+                        )""", re.VERBOSE | re.DOTALL | re.IGNORECASE
+                )
+                for match in func_pattern.finditer(message_content):
+                    start, end = match.span(1)
+                    text_before = message_content[last_match_end:start]
+                    if text_before:
+                        cursor.setCharFormat(message_format) # Use standard message format for text before
+                        cursor.insertText(text_before)
 
-        # Add to internal history deque if requested
+                    func_name = match.group(2); args_json_str_html = match.group(3)
+                    display_action_str = f"[Keyboard Action: {func_name}]" # Default display
+                    try:
+                        args_json_str = html.unescape(args_json_str_html); args_dict = json.loads(args_json_str)
+                        if func_name == "clipboard_paste":
+                            text_to_paste = args_dict.get('text', '')
+                            display_text = text_to_paste[:30] + ('...' if len(text_to_paste) > 30 else '')
+                            display_action_str = f" 📋 Paste: '{display_text}' " # Use clipboard icon
+                        elif func_name == "keyboard_press": display_action_str = f" ⌨️ Press: {args_dict.get('key', 'N/A').capitalize()} "
+                        elif func_name == "keyboard_hotkey": display_action_str = f" ⌨️ Hotkey: {'+'.join(k.capitalize() for k in args_dict.get('keys', []))} "
+                        else: display_action_str = f" ⌨️ Unknown Action: {func_name} "
+                    except Exception as parse_err:
+                        print(f"Warning: Error processing action tag for display: {parse_err}")
+                        display_action_str = f" ⌨️ Error Parsing Action: {func_name} "
+
+                    cursor.setCharFormat(kb_action_format) # Apply special format for action display
+                    cursor.insertText(display_action_str)
+                    last_match_end = end
+            # --- Handle AI Command Echo ---
+            elif role_lower == 'ai command':
+                 # The message itself is the command, apply the message format (which uses ai_command color)
+                 cursor.setCharFormat(message_format)
+                 cursor.insertText(message_content)
+                 last_match_end = len(message_content) # Processed the whole message
+
+            # Insert any remaining text (or the whole message if not 'Model' or 'AI Command')
+            text_after = message_content[last_match_end:]
+            if text_after:
+                cursor.setCharFormat(message_format) # Use standard message format
+                cursor.insertText(text_after)
+
+            # --- Insert Timestamp (if provided for 'Model') ---
+            if role_lower == 'model' and elapsed_time is not None and elapsed_time >= 0:
+                timestamp_text = f" (耗时: {elapsed_time:.2f} 秒)"
+                cursor.setCharFormat(timestamp_format)
+                cursor.insertText(timestamp_text)
+
+            # Insert the final newline using the standard message format
+            cursor.setCharFormat(message_format)
+            cursor.insertText('\n')
+
+        except RuntimeError: print("Warning: Could not insert chat message content."); return
+
+        # --- Add to internal history deque if requested ---
         if add_to_internal_history:
-            # Remove potential timing info before adding to history
-            message_for_history = re.sub(r"\s*\([\u0041-\uFFFF]+:\s*[\d.]+\s*[\u0041-\uFFFF]+\)$", "", message).strip()
-            # Check if the message (role + content) is already the last one to avoid duplicates
-            if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
-                self.conversation_history.append((role, message_for_history))
+             message_for_history = message.strip()
+             # Ensure the deque exists before appending
+             if not hasattr(self, 'conversation_history'): self.conversation_history = deque(maxlen=50)
+             if not self.conversation_history or self.conversation_history[-1] != (role, message_for_history):
+                 self.conversation_history.append((role, message_for_history))
 
-        # Scroll to bottom if we were already at the end
+        # --- Scroll to bottom ---
         if at_end:
             scrollbar = target_widget.verticalScrollBar()
             if scrollbar:
                 try:
-                    # Process events to ensure layout is updated before scrolling
                     QApplication.processEvents()
                     scrollbar.setValue(scrollbar.maximum())
-                    target_widget.ensureCursorVisible() # Ensure cursor is visible after insertion
-                except RuntimeError:
-                    print("Warning: Could not scroll/ensure cursor visible for chat display.")
+                    target_widget.ensureCursorVisible()
+                except RuntimeError: print("Warning: Could not scroll/ensure cursor visible for chat display.")
+    # ============================================================= #
+    # <<< END MODIFIED add_chat_message METHOD >>>
+    # ============================================================= #
+
 
     # ============================================================= #
-    # <<< MODIFIED add_cli_output METHOD >>>
+    # <<< add_cli_output METHOD (Modified slightly for echo) >>>
     # ============================================================= #
     def add_cli_output(self: 'MainWindow', message_bytes: bytes, message_type: str = "output"):
         # Adds message (decoded) to the CLI output display (left pane)
         if self._closing or not self.cli_output_display: return
 
         target_widget = self.cli_output_display
-        # Decode bytes using the utility function
         decoded_message = decode_output(message_bytes).rstrip()
         if not decoded_message: return # Don't add empty lines
 
@@ -365,22 +445,26 @@ class UpdatesMixin:
 
         current_theme = config.APP_THEME
         prefix_format = QTextCharFormat(); message_format = QTextCharFormat()
-        prefix_to_check = None; prefix_color = None; message_color = None
+        prefix_to_insert = None; message_to_insert = decoded_message;
+        prefix_color = None; message_color = None; prefix_bold = False
 
-        # Handle User/Model prefixes (added by workers/main window) for coloring
-        # Matches "User CWD:" or "Model CWD:" at the start, capturing the prefix part
-        user_prefix_match = re.match(r"^(User\s+.*?):\s", decoded_message)
-        model_prefix_match = re.match(r"^(Model\s+.*?):\s", decoded_message)
+        # Check for our specific echo formats first
+        # Matches "User CWD> " or "Model CWD> " at the start
+        user_echo_match = re.match(r"^(User\s+.*?>\s)", decoded_message)
+        model_echo_match = re.match(r"^(Model\s+.*?>\s)", decoded_message) # Updated prompt symbol
 
-        # Check if the message matches known prefixes
-        if user_prefix_match and message_type == "user": # Manual command echo with CWD
-            prefix_to_check = user_prefix_match.group(1) + ":" # Include the colon
+        if user_echo_match and message_type == "user": # Manual command echo with CWD
+            prefix_to_insert = user_echo_match.group(1)
+            message_to_insert = decoded_message[len(prefix_to_insert):] # The actual command
             prefix_color = get_color('user', current_theme)
             message_color = get_color('cli_output', current_theme) # Color for the command part
-        elif model_prefix_match and message_type == "output": # AI command echo with CWD
-            prefix_to_check = model_prefix_match.group(1) + ":" # Include the colon
+            prefix_bold = True # Make prefix bold
+        elif model_echo_match and message_type == "output": # AI command echo with CWD
+            prefix_to_insert = model_echo_match.group(1)
+            message_to_insert = decoded_message[len(prefix_to_insert):] # The actual command
             prefix_color = get_color('model', current_theme)
-            message_color = get_color('cli_output', current_theme) # Color for the command part
+            message_color = get_color('ai_command', current_theme) # Use AI command color for the command itself
+            prefix_bold = True # Make prefix bold
         else:
             # No prefix matched, determine color based on message_type only
             if message_type == "error":
@@ -401,15 +485,12 @@ class UpdatesMixin:
             elif message_type == "system":
                  sys_system_color = sys_palette.color(QPalette.ColorRole.ToolTipText) # Try ToolTipText for system messages
                  message_color = sys_system_color if sys_system_color.isValid() else sys_palette.color(QPalette.ColorRole.Text)
-            elif message_color == get_color('cli_output', "dark"): # Check if it defaulted to dark theme's output color
+            # Check if message_color defaulted to the dark theme's standard output color (or our special AI command color)
+            elif isinstance(message_color, QColor) and (message_color.name() == get_color('cli_output', "dark").name() or message_color.name() == get_color('ai_command', "dark").name()):
                  message_color = sys_palette.color(QPalette.ColorRole.Text) # Use standard text color
 
-            # Adjust prefix color for system theme (Use standard text for better contrast?)
-            # Check if prefix_color was set and corresponds to the default dark theme colors
-            # Uncomment the following two lines if you prefer User/Model prefixes to use standard text color in system theme
-            # if prefix_color == get_color('user', "dark"): prefix_color = sys_palette.color(QPalette.ColorRole.Text)
-            # if prefix_color == get_color('model', "dark"): prefix_color = sys_palette.color(QPalette.ColorRole.Text)
-            # Keep the defined green/blue from constants.py for system theme by default
+            # Adjust prefix color for system theme (if needed, keep user/model colors for now)
+            # if isinstance(prefix_color, QColor): ...
 
         # Ensure colors are valid QColor objects before use
         default_cli_output_color = get_color('cli_output', current_theme)
@@ -419,21 +500,20 @@ class UpdatesMixin:
 
         # Insert text safely
         try:
-            if prefix_to_check: # If a User/Model prefix was found
-                # Insert Prefix (Bold)
+            if prefix_to_insert: # If a User/Model prefix was found
+                # Insert Prefix
                 prefix_format.setForeground(prefix_color)
-                prefix_font = prefix_format.font(); prefix_font.setBold(True); prefix_format.setFont(prefix_font)
-                cursor.setCharFormat(prefix_format); cursor.insertText(prefix_to_check + " ")
+                prefix_font = prefix_format.font(); prefix_font.setBold(prefix_bold); prefix_format.setFont(prefix_font)
+                cursor.setCharFormat(prefix_format); cursor.insertText(prefix_to_insert)
 
-                # Insert Message Part (command) - Not Bold
-                message_part = decoded_message[len(prefix_to_check):].strip() # Get the part after the prefix and space
+                # Insert Message Part (command)
                 message_format.setForeground(message_color)
-                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font)
-                cursor.setCharFormat(message_format); cursor.insertText(message_part + "\n")
+                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font) # Command part not bold
+                cursor.setCharFormat(message_format); cursor.insertText(message_to_insert + "\n")
             else:
-                # Insert the whole message with a single color (error, system, regular output) - Not Bold
+                # Insert the whole message with a single color (error, system, regular output)
                 message_format.setForeground(message_color)
-                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font)
+                message_font = message_format.font(); message_font.setBold(False); message_format.setFont(message_font) # Not bold
                 cursor.setCharFormat(message_format); cursor.insertText(decoded_message + "\n")
         except RuntimeError: print("Warning: Could not insert CLI text."); return
 
@@ -447,5 +527,5 @@ class UpdatesMixin:
                     target_widget.ensureCursorVisible()
                 except RuntimeError: print("Warning: Could not scroll/ensure CLI cursor visible.")
     # ============================================================= #
-    # <<< END MODIFIED add_cli_output METHOD >>>
+    # <<< END add_cli_output METHOD >>>
     # ============================================================= #
