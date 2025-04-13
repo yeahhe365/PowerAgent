@@ -2,11 +2,8 @@
 
 一个将 AI 聊天助手与本地命令行控制相结合的桌面应用程序。
 
-<!-- 在这里添加一张应用程序界面的截图 -->
 ![image](https://github.com/user-attachments/assets/451b6bde-ef95-4b63-b0ae-5c2127cf6f73)
-<p align="center">
-  <em>(在此处插入 PowerAgent 主界面截图)</em>
-</p>
+
 
 ## 主要功能
 
