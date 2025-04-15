@@ -1,7 +1,3 @@
-# ========================================
-# 文件名: PowerAgent/gui/main_window.py
-# (MODIFIED - Added event filter for Tab key focus switching between CLI and Chat inputs)
-# ---------------------------------------
 # gui/main_window.py
 # -*- coding: utf-8 -*-
 
@@ -10,18 +6,17 @@ import os
 import time
 import platform
 import traceback
+import logging # Import logging
 from collections import deque
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QSplitter, QApplication, QComboBox, QFrame,
-    QLineEdit, QTextEdit, QLabel, QPushButton
+    QLineEdit, QTextEdit, QLabel, QPushButton, QMessageBox # Added QMessageBox
 )
-# <<< MODIFICATION START: Import QEvent >>>
 from PySide6.QtCore import Qt, Slot, QSettings, QCoreApplication, QStandardPaths, QSize, QEvent, QThread
-# <<< MODIFICATION END >>>
 from PySide6.QtGui import (
     QTextCursor, QPalette, QFont, QIcon, QColor,
-    QAction, QKeySequence # Keep QKeySequence for HandlersMixin keyPressEvent type hint
+    QAction, QKeySequence
 )
 
 # --- Project Imports ---
@@ -37,45 +32,67 @@ from .main_window_updates import UpdatesMixin
 from .main_window_state import StateMixin
 from .main_window_workers import WorkersMixin
 
+# --- Get Logger ---
+logger = logging.getLogger(__name__)
+
 # --- Main Window Class ---
 class MainWindow(QMainWindow, HandlersMixin, UpdatesMixin, StateMixin, WorkersMixin):
 
     def __init__(self, application_base_dir=None, parent=None):
+        logger.info("--- MainWindow Initializing ---")
         # Initialize QMainWindow first
         super().__init__(parent)
 
         # --- 1. Determine Base Directory ---
-        # (Logic remains the same as before)
-        if application_base_dir: self.application_base_dir = application_base_dir
-        elif getattr(sys, 'frozen', False): self.application_base_dir = os.path.dirname(sys.executable)
-        else:
-            try: main_script_path = os.path.abspath(sys.argv[0]); self.application_base_dir = os.path.dirname(main_script_path)
-            except Exception: self.application_base_dir = os.path.dirname(os.path.abspath(__file__))
-        print(f"[MainWindow] Using Application Base Directory: {self.application_base_dir}")
+        # (Logic remains the same)
+        start_time = time.monotonic() # Time the init process
+        try:
+            if application_base_dir:
+                self.application_base_dir = application_base_dir
+                logger.debug("Using provided application base directory.")
+            elif getattr(sys, 'frozen', False):
+                self.application_base_dir = os.path.dirname(sys.executable)
+                logger.debug("Running as frozen executable.")
+            else:
+                try:
+                     main_script_path = os.path.abspath(sys.argv[0])
+                     self.application_base_dir = os.path.dirname(main_script_path)
+                     logger.debug("Running as script, determined from sys.argv[0].")
+                except Exception:
+                     logger.warning("Could not determine base directory from sys.argv[0], falling back to __file__.", exc_info=False)
+                     # Fallback: determine based on the directory of main_window.py
+                     self.application_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                     logger.debug("Fallback to parent of current file directory.")
+            logger.info(f"Application Base Directory set to: {self.application_base_dir}")
+        except Exception as e:
+             logger.error("Failed to determine application base directory!", exc_info=True)
+             # Attempt a reasonable fallback
+             self.application_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+             logger.warning(f"Using fallback base directory: {self.application_base_dir}")
+
 
         # --- 1.5 Get Launch Directory EARLY ---
         try:
             # This gets the directory where the script/exe was *launched from*
             self.launch_directory = os.getcwd()
-            print(f"[MainWindow] Detected Launch Directory (Initial CWD): {self.launch_directory}")
+            logger.info(f"Detected Launch Directory (Initial CWD): {self.launch_directory}")
         except OSError as e:
-            print(f"CRITICAL: Failed to get current working directory: {e}. Falling back to app base dir.")
+            logger.critical(f"Failed to get current working directory: {e}. Falling back to app base dir.", exc_info=True)
             self.launch_directory = self.application_base_dir # Fallback
 
         # --- 2. Define and Ensure 'Space' Directory ---
-        # (Logic remains the same as before)
         self.initial_directory = os.path.normpath(os.path.join(self.application_base_dir, "Space"))
-        print(f"[MainWindow] Reference 'Space' directory path: {self.initial_directory}")
+        logger.info(f"Reference 'Space' directory path: {self.initial_directory}")
         try:
             os.makedirs(self.initial_directory, exist_ok=True)
-            print(f"[MainWindow] Ensured reference 'Space' directory exists: {self.initial_directory}")
+            logger.info(f"Ensured reference 'Space' directory exists.")
         except OSError as e:
-            print(f"Warning: Failed to create reference 'Space' directory '{self.initial_directory}': {e}.")
+            logger.warning(f"Failed to create reference 'Space' directory '{self.initial_directory}': {e}.")
 
         # --- 3. Initialize State Variables ---
-        # Set current_directory initially to the LAUNCH directory captured above.
-        self.current_directory = self.launch_directory
-        print(f"[MainWindow] Initializing internal CWD state to Launch Directory: {self.current_directory}")
+        logger.debug("Initializing state variables...")
+        self.current_directory = self.launch_directory # Initial state set to launch dir
+        logger.info(f"Initial internal CWD state set to Launch Directory: {self.current_directory}")
 
         self.conversation_history = deque(maxlen=50) # Chat history
         self.cli_command_history = deque(maxlen=100) # CLI input history
@@ -84,8 +101,10 @@ class MainWindow(QMainWindow, HandlersMixin, UpdatesMixin, StateMixin, WorkersMi
         self.manual_cmd_thread: ManualCommandThread | None = None
         self.settings_dialog_open = False
         self._closing = False
+        logger.debug("State variables initialized.")
 
         # --- 4. Initialize UI Element Placeholders ---
+        # (No logging needed here, just definitions)
         self.model_selector_combo: QComboBox | None = None
         self.status_indicator: StatusIndicatorWidget | None = None
         self.cli_prompt_label: QLabel | None = None
@@ -100,129 +119,236 @@ class MainWindow(QMainWindow, HandlersMixin, UpdatesMixin, StateMixin, WorkersMi
         self.status_bar = None
 
         # --- 5. Load State (History, etc.) ---
+        # load_state() has its own logging
+        logger.info("Loading initial state (Chat/CLI History, etc.)...")
         try:
-            print("[MainWindow] Loading state (Chat/CLI History, Selected Model)...")
-            self.load_state() # Defined in StateMixin (Should NO LONGER load CWD)
-            print(f"[MainWindow] State loaded. CWD remains: {self.current_directory}")
+            self.load_state() # Defined in StateMixin
+            logger.info(f"State loaded. Internal CWD is now: {self.current_directory}")
         except Exception as e:
-            print(f"Warning: Error during initial state load: {e}")
-            traceback.print_exc()
+            logger.error("Error during initial state load.", exc_info=True)
+            # load_state() has fallback logic, but log the error here too
 
         # --- 6. Sync Process CWD ---
-        self._sync_process_cwd() # Call the helper method
+        self._sync_process_cwd() # Method contains logging
 
         # --- 7. Basic Window Setup ---
+        logger.debug("Setting up basic window properties (title, geometry, icon)...")
         self.setWindowTitle(APP_NAME)
-        self.setGeometry(100, 100, 850, 585)
-        self.set_window_icon() # Defined in UpdatesMixin
+        self.setGeometry(100, 100, 850, 585) # Default geometry
+        self.set_window_icon() # Defined in UpdatesMixin (should add logging there)
+        logger.debug("Basic window setup complete.")
 
         # --- 8. Setup UI Elements ---
-        self.setup_ui() # Calls create_ui_elements which assigns widgets to self
+        logger.info("Setting up UI elements...")
+        try:
+            self.setup_ui() # Calls create_ui_elements
+            logger.info("UI elements created and assigned.")
+            # Verify key widgets were created
+            if not self.cli_input: logger.warning("cli_input widget was not created during setup_ui!")
+            if not self.chat_input: logger.warning("chat_input widget was not created during setup_ui!")
+            if not self.splitter: logger.warning("splitter widget was not created during setup_ui!")
+        except Exception as ui_setup_err:
+             logger.critical("CRITICAL error during UI setup!", exc_info=True)
+             # Optionally show error to user and exit?
+             QMessageBox.critical(self, "UI Setup Error", f"Failed to set up UI elements:\n{ui_setup_err}")
+             sys.exit(1)
 
         # --- 9. Restore Splitter State ---
+        logger.debug("Restoring splitter state...")
         try:
             settings = config.get_settings()
-            splitter_state = settings.value("ui/splitter_state")
-            if self.splitter and splitter_state and isinstance(splitter_state, (bytes, bytearray)):
-                if self.splitter.restoreState(splitter_state): print("[MainWindow] Restored splitter state from settings.")
-                else: print("[MainWindow] Warning: Failed to restore splitter state."); self._set_default_splitter_sizes()
-            elif self.splitter: self._set_default_splitter_sizes(); print(f"[MainWindow] Set default splitter sizes.")
-            else: print("[MainWindow] Warning: Splitter object not found after UI setup.")
+            splitter_state_value = settings.value("ui/splitter_state") # Fetch raw value
+            if self.splitter and splitter_state_value:
+                # Check type before restoring (should be bytes or bytearray)
+                if isinstance(splitter_state_value, (bytes, bytearray)):
+                    if self.splitter.restoreState(splitter_state_value):
+                        logger.info("Restored splitter state from settings.")
+                    else:
+                        logger.warning("Failed to restore splitter state (restoreState returned False). Setting defaults.")
+                        self._set_default_splitter_sizes()
+                else:
+                    logger.warning(f"Invalid splitter state type found in settings: {type(splitter_state_value)}. Setting defaults.")
+                    self._set_default_splitter_sizes()
+            elif self.splitter:
+                logger.info("No splitter state found in settings or splitter invalid. Setting default sizes.")
+                self._set_default_splitter_sizes()
+            else:
+                logger.warning("Splitter object not found after UI setup. Cannot restore/set state.")
         except Exception as e:
-            print(f"[MainWindow] Error restoring or setting splitter sizes: {e}")
-            if self.splitter: self._set_default_splitter_sizes()
+            logger.error("Error restoring or setting splitter sizes.", exc_info=True)
+            if self.splitter: self._set_default_splitter_sizes() # Try setting defaults on error
 
         # --- 10. Post-UI Setup ---
-        self.apply_theme_specific_styles() # Defined in UpdatesMixin
-        self.load_and_apply_state()      # Defined in UpdatesMixin (displays history etc.)
+        # apply_theme_specific_styles() and load_and_apply_state() should have own logging
+        logger.info("Applying theme-specific styles...")
+        self.apply_theme_specific_styles()
+        logger.info("Loading and applying display state (history, etc.)...")
+        self.load_and_apply_state()
 
-        # <<< MODIFICATION START: Install event filter for Tab key >>>
-        # Ensure this happens AFTER setup_ui has created the widgets
+        # --- Event Filter Installation ---
+        logger.debug("Installing event filters for focus switching...")
+        filter_installed = False
         if self.cli_input:
             self.cli_input.installEventFilter(self)
-            print("[MainWindow] Installed event filter on cli_input.")
+            logger.debug("Installed event filter on cli_input.")
+            filter_installed = True
         else:
-            print("[MainWindow] Warning: cli_input not initialized, cannot install event filter.")
+            logger.warning("cli_input not initialized, cannot install event filter.")
 
         if self.chat_input:
             self.chat_input.installEventFilter(self)
-            print("[MainWindow] Installed event filter on chat_input.")
+            logger.debug("Installed event filter on chat_input.")
+            filter_installed = True
         else:
-            print("[MainWindow] Warning: chat_input not initialized, cannot install event filter.")
-        # <<< MODIFICATION END >>>
+            logger.warning("chat_input not initialized, cannot install event filter.")
+        if not filter_installed: logger.warning("No event filters installed for focus switching.")
 
         # --- 11. Set Initial Status ---
-        self.update_status_indicator(False) # Defined in UpdatesMixin
-        self.update_model_selector()      # Defined in UpdatesMixin
+        # update_status_indicator() and update_model_selector() should have logging
+        logger.debug("Updating initial status indicator and model selector...")
+        self.update_status_indicator(False)
+        self.update_model_selector()
 
         # --- 12. Add Welcome Message ---
         if not self.conversation_history:
              welcome_message = f"欢迎使用 {APP_NAME}！当前工作目录已设置为您的启动目录: '{self.current_directory}'。\n输入 '/help' 查看命令。"
+             logger.info("Adding initial welcome message.")
+             # add_chat_message should have its own logging
              self.add_chat_message("System", welcome_message, add_to_internal_history=False)
-             print(f"[MainWindow] Added initial welcome message (CWD: {self.current_directory}).")
         else:
-             print("[MainWindow] Skipping initial welcome message as history was loaded.")
+             logger.info(f"Skipping initial welcome message as {len(self.conversation_history)} history items were loaded.")
 
         # --- 13. Update Prompt & Focus ---
-        self.update_prompt() # Defined in UpdatesMixin (Will show the launch directory)
-        if self.cli_input:
-            self.cli_input.setFocus() # Initial focus on CLI input
+        logger.debug("Updating initial CLI prompt...")
+        self.update_prompt() # Should have logging
+
+        # <<< MODIFICATION: Set initial focus to chat input >>>
+        if self.chat_input:
+            logger.info("Setting initial focus to chat input.") # Changed log level to INFO for visibility
+            self.chat_input.setFocus()
+        elif self.cli_input: # Fallback to CLI if chat input somehow failed
+             logger.warning("Chat input not available. Falling back to setting focus on CLI input.")
+             self.cli_input.setFocus()
+        else:
+             logger.warning("Cannot set initial focus, neither chat_input nor cli_input are available.")
+        # <<< END MODIFICATION >>>
+
+        init_duration = time.monotonic() - start_time
+        logger.info(f"--- MainWindow Initialization Finished ({init_duration:.3f}s) ---")
 
     def _sync_process_cwd(self):
         """Attempts to set the OS process CWD to self.current_directory with fallbacks."""
-        # (No changes needed in this method body)
-        print(f"[MainWindow] Attempting to sync OS process CWD to: {self.current_directory}")
+        logger.info(f"Attempting to sync OS process CWD to internal state: {self.current_directory}")
         target_dir_to_set = self.current_directory
+        original_os_cwd = os.getcwd() # Get current OS CWD for comparison
+
+        if original_os_cwd == target_dir_to_set:
+            logger.info("OS process CWD already matches target directory. No change needed.")
+            return
+
         try:
             if os.path.isdir(target_dir_to_set):
                 os.chdir(target_dir_to_set)
-                print(f"[MainWindow] Successfully set OS process CWD to: {target_dir_to_set}")
-            else:
-                print(f"Warning: Launch directory '{target_dir_to_set}' is not valid or inaccessible. Falling back...")
-                if os.path.isdir(self.initial_directory):
-                    self.current_directory = self.initial_directory
-                    os.chdir(self.current_directory)
-                    print(f"[MainWindow] OS Process CWD set to fallback (Space dir): {self.current_directory}")
-                    self.save_state()
+                # Verify change
+                if os.getcwd() == target_dir_to_set:
+                    logger.info(f"Successfully set OS process CWD to: {target_dir_to_set}")
                 else:
-                    print(f"Warning: Fallback 'Space' directory '{self.initial_directory}' also invalid. Falling back to app base.")
-                    if os.path.isdir(self.application_base_dir):
-                         self.current_directory = self.application_base_dir
-                         os.chdir(self.current_directory)
-                         print(f"[MainWindow] OS Process CWD set to fallback (app base dir): {self.current_directory}")
-                         self.save_state()
+                     # This case is unlikely but possible with complex permissions/mounts
+                     logger.error(f"OS chdir to '{target_dir_to_set}' reported success, but getcwd() returned '{os.getcwd()}'. CWD sync failed.")
+                     # Revert internal state? Or keep internal state and log discrepancy? Let's log.
+                     # self.current_directory = os.getcwd() # Option: Revert internal state
+            else:
+                logger.warning(f"Target directory '{target_dir_to_set}' is not valid or inaccessible. Falling back...")
+                fallback_used = False
+                # Try falling back to initial ('Space') directory
+                if os.path.isdir(self.initial_directory):
+                    logger.info(f"Attempting fallback to initial directory: {self.initial_directory}")
+                    os.chdir(self.initial_directory)
+                    if os.getcwd() == self.initial_directory:
+                         logger.info(f"OS Process CWD set to fallback (Space dir): {self.initial_directory}")
+                         self.current_directory = self.initial_directory # Update internal state
+                         self.save_state() # Save the new fallback state
+                         fallback_used = True
                     else:
-                        print(f"CRITICAL: App base directory '{self.application_base_dir}' also invalid. Using OS default CWD.")
-                        final_cwd = os.getcwd(); self.current_directory = final_cwd
-                        print(f"[MainWindow] OS Process CWD remains at default: {self.current_directory}")
+                         logger.error(f"Fallback to '{self.initial_directory}' failed. getcwd() is '{os.getcwd()}'.")
+                else:
+                    logger.warning(f"Fallback 'Space' directory '{self.initial_directory}' also invalid or inaccessible.")
+
+                # If Space fallback failed, try app base directory
+                if not fallback_used:
+                     if os.path.isdir(self.application_base_dir):
+                         logger.info(f"Attempting fallback to application base directory: {self.application_base_dir}")
+                         os.chdir(self.application_base_dir)
+                         if os.getcwd() == self.application_base_dir:
+                             logger.info(f"OS Process CWD set to fallback (app base dir): {self.application_base_dir}")
+                             self.current_directory = self.application_base_dir
+                             self.save_state()
+                             fallback_used = True
+                         else:
+                             logger.error(f"Fallback to '{self.application_base_dir}' failed. getcwd() is '{os.getcwd()}'.")
+                     else:
+                          logger.warning(f"Application base directory '{self.application_base_dir}' also invalid or inaccessible.")
+
+                # If all fallbacks fail, log the final state
+                if not fallback_used:
+                    final_cwd = os.getcwd()
+                    logger.critical(f"All CWD sync attempts failed. OS process CWD remains at '{final_cwd}'.")
+                    # Update internal state to match the final OS reality
+                    if self.current_directory != final_cwd:
+                         logger.warning(f"Updating internal CWD state from '{self.current_directory}' to match OS CWD '{final_cwd}'.")
+                         self.current_directory = final_cwd
+                         # Maybe save this unexpected state?
+                         # self.save_state()
         except OSError as e:
-            print(f"CRITICAL: OSError occurred during CWD sync to '{target_dir_to_set}': {e}")
-            traceback.print_exc()
-            final_cwd = os.getcwd(); self.current_directory = final_cwd
-            print(f"[MainWindow] Using OS CWD due to exception during sync: {self.current_directory}")
+            logger.critical(f"OSError occurred during CWD sync to '{target_dir_to_set}'.", exc_info=True)
+            final_cwd = os.getcwd()
+            logger.warning(f"Using OS CWD '{final_cwd}' due to exception during sync.")
+            if self.current_directory != final_cwd:
+                 self.current_directory = final_cwd
+                 # self.save_state() # Save the state resulting from the error?
+        except Exception as e:
+             logger.critical("Unexpected error during CWD sync.", exc_info=True)
+             final_cwd = os.getcwd()
+             logger.warning(f"Using OS CWD '{final_cwd}' due to unexpected exception.")
+             if self.current_directory != final_cwd:
+                 self.current_directory = final_cwd
+                 # self.save_state()
+
+        # Update prompt regardless of success/failure to reflect final internal state
         self.update_prompt()
+        logger.info("CWD synchronization process finished.")
+
 
     def setup_ui(self):
         """Creates and arranges all UI widgets by calling the external setup function."""
-        # (No changes needed here)
-        create_ui_elements(self)
+        logger.info("Calling create_ui_elements...")
+        create_ui_elements(self) # External function, assumed to work or raise error
+        logger.info("create_ui_elements finished.")
+
 
     def _set_default_splitter_sizes(self):
         """Helper to set default splitter sizes."""
-        # (No changes needed here)
         if self.splitter:
             try:
-                default_width = self.geometry().width(); cli_width = int(default_width * 0.55)
-                chat_width = default_width - cli_width; self.splitter.setSizes([cli_width, chat_width])
-            except Exception as e: print(f"[MainWindow] Warning: Could not set default splitter sizes: {e}")
+                # Use a reasonable default split ratio, e.g., 55% CLI, 45% Chat
+                default_width = self.geometry().width() # Use current width
+                if default_width < 100: # Prevent division by zero or tiny sizes
+                     logger.warning(f"Window width ({default_width}) too small for default splitter sizes. Skipping.")
+                     return
+                cli_width = int(default_width * 0.55)
+                chat_width = default_width - cli_width
+                logger.info(f"Setting default splitter sizes: CLI={cli_width}, Chat={chat_width}")
+                self.splitter.setSizes([cli_width, chat_width])
+            except Exception as e:
+                logger.error("Could not set default splitter sizes.", exc_info=True)
+        else:
+            logger.warning("Cannot set default splitter sizes: splitter widget not found.")
 
-    # ============================================================= #
-    # <<< MODIFICATION START: Add eventFilter for Tab key >>>
-    # ============================================================= #
     def eventFilter(self, watched, event):
         """Handles Tab key presses on cli_input and chat_input for focus switching."""
-        # Ensure the widgets we care about actually exist before proceeding
         if not self.cli_input or not self.chat_input:
+             # Log this only once or rarely if it occurs often
+             # logger.debug("Event filter called but input widgets not ready.")
              return super().eventFilter(watched, event)
 
         if event.type() == QEvent.Type.KeyPress:
@@ -236,40 +362,33 @@ class MainWindow(QMainWindow, HandlersMixin, UpdatesMixin, StateMixin, WorkersMi
             # --- Handle Plain Tab (Forward) ---
             if is_plain_tab:
                 if watched == self.cli_input:
-                    # print("Tab pressed on CLI input, focusing chat input") # Debug
+                    logger.debug("Tab pressed on CLI input, focusing chat input.")
                     self.chat_input.setFocus()
-                    return True # Event handled, stop further processing
+                    return True # Event handled
                 elif watched == self.chat_input:
-                    # print("Tab pressed on Chat input, focusing CLI input") # Debug
+                    logger.debug("Tab pressed on Chat input, focusing CLI input.")
                     self.cli_input.setFocus()
                     return True # Event handled
 
             # --- Handle Shift+Tab (Backward) ---
             elif is_shift_tab:
                  if watched == self.cli_input:
-                     # print("Shift+Tab pressed on CLI input, focusing chat input") # Debug
-                     # Moving from CLI with Shift+Tab should go to Chat Input
+                     logger.debug("Shift+Tab pressed on CLI input, focusing chat input.")
                      self.chat_input.setFocus()
                      return True # Event handled
                  elif watched == self.chat_input:
-                     # print("Shift+Tab pressed on Chat input, focusing CLI input") # Debug
-                     # Moving from Chat with Shift+Tab should go to CLI Input
+                     logger.debug("Shift+Tab pressed on Chat input, focusing CLI input.")
                      self.cli_input.setFocus()
                      return True # Event handled
 
-        # If the event wasn't handled (not Tab/Shift+Tab or not on the watched widgets),
-        # pass it to the base class implementation. This allows standard key processing
-        # (like character input, Enter, Backspace) in the input fields.
+        # Pass unhandled events to the base class
         return super().eventFilter(watched, event)
-    # ============================================================= #
-    # <<< MODIFICATION END >>>
-    # ============================================================= #
 
-    # ============================================================= #
-    # <<< MODIFICATION START: Updated Help Text to include Tab info >>>
-    # ============================================================= #
+
     def show_help(self):
         """Displays help information in the chat window."""
+        logger.info("Displaying help information in chat window.")
+        # (Help text content remains the same)
         help_title = f"--- {APP_NAME} 帮助 ---"
         core_info = f"""
 **主要操作:**
@@ -314,42 +433,48 @@ class MainWindow(QMainWindow, HandlersMixin, UpdatesMixin, StateMixin, WorkersMi
                      f" {cmd_save}\n"
                      f" {cmd_exit}\n\n"
                      f"{toolbar_info_title}\n{toolbar_desc}\n")
+        # add_chat_message should have logging
         self.add_chat_message("Help", help_text, add_to_internal_history=False)
-    # ============================================================= #
-    # <<< MODIFICATION END >>>
-    # ============================================================= #
+
 
     def closeEvent(self, event):
-        # Handles window close: stop threads, save state gracefully
-        # (No changes needed here)
-        if self._closing: event.ignore(); return
-        self._closing = True
-        print("[MainWindow] Close event triggered. Initiating shutdown...")
+        """Handles window close: stop threads, save state gracefully."""
+        logger.info("Close event triggered.")
+        if self._closing:
+            logger.warning("Close event ignored: Already closing.")
+            event.ignore(); return
 
+        self._closing = True
+        logger.info("Initiating application shutdown sequence...")
+
+        # Stop workers (methods should have own logging)
+        logger.info("Stopping API worker thread (if running)...")
         api_stopped = self.stop_api_worker()
+        logger.info("Stopping Manual Command worker thread (if running)...")
         manual_stopped = self.stop_manual_worker()
 
+        # Wait for threads (optional, with timeout)
         wait_timeout_ms = 500; threads_to_wait = []
         if api_stopped and self.api_worker_thread: threads_to_wait.append(self.api_worker_thread)
         if manual_stopped and self.manual_cmd_thread: threads_to_wait.append(self.manual_cmd_thread)
 
         if threads_to_wait:
-            print(f"[MainWindow] Waiting up to {wait_timeout_ms}ms for {len(threads_to_wait)} worker thread(s)...")
+            logger.info(f"Waiting up to {wait_timeout_ms}ms for {len(threads_to_wait)} worker thread(s) to finish...")
             start_wait_time = time.monotonic(); all_finished = False
             while time.monotonic() - start_wait_time < wait_timeout_ms / 1000.0:
-                 all_finished = all(not thread.isRunning() for thread in threads_to_wait)
+                 # Use isFinished() for QThread state check
+                 all_finished = all(thread.isFinished() for thread in threads_to_wait)
                  if all_finished: break
-                 QApplication.processEvents(); QThread.msleep(50) # Use QThread.msleep for better Qt integration
-            if all_finished: print("[MainWindow] All worker threads finished gracefully.")
-            else: print("[MainWindow] Warning: Worker thread(s) did not finish within timeout.")
+                 QApplication.processEvents(); QThread.msleep(50)
 
-        print("[MainWindow] Saving final state before closing...")
-        self.save_state() # Defined in StateMixin
+            if all_finished: logger.info("All worker threads finished gracefully.")
+            else: logger.warning("Worker thread(s) did not finish within timeout.")
+        else:
+             logger.info("No active worker threads needed waiting.")
 
-        print("[MainWindow] Exiting application.")
+        # Save final state
+        logger.info("Saving final application state before closing...")
+        self.save_state() # Method has logging
+
+        logger.info("Accepting close event. Exiting application.")
         event.accept()
-
-# Note: The HandlersMixin (in main_window_handlers.py) contains the keyPressEvent
-# which handles Up/Down arrows in the CLI input. That logic remains separate and correct.
-# The eventFilter added here specifically handles the Tab/Shift+Tab focus switching
-# between the two designated input widgets.

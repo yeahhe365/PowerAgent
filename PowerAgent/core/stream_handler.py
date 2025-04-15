@@ -1,6 +1,6 @@
 # ========================================
 # 文件名: PowerAgent/core/stream_handler.py
-# (CORRECTED)
+# (CORRECTED - Improved termination logic & error handling)
 # ----------------------------------------
 # core/stream_handler.py
 # -*- coding: utf-8 -*-
@@ -12,9 +12,8 @@ Handles reading from subprocess streams asynchronously.
 import os
 import platform
 import traceback
-# --- MODIFICATION START: Import io module ---
 import io
-# --- MODIFICATION END ---
+import time # Import time for sleep
 from PySide6.QtCore import QObject, Signal, QThread
 
 class StreamWorker(QObject):
@@ -27,114 +26,130 @@ class StreamWorker(QObject):
 
          Args:
              stream: The stream object (e.g., process.stdout, process.stderr).
-             stop_flag_func: A callable function that returns True if the worker should stop.
+             stop_flag_func: A callable function that returns True if the worker should stop (external signal).
              line_list (optional): A list to append raw chunks to (used for stderr checking later).
              filter_clixml (optional): If True on Windows, attempts to filter out CLIXML error messages.
          """
          super().__init__()
          self.stream = stream
-         self.stop_flag_func = stop_flag_func
+         self.external_stop_flag_func = stop_flag_func # Rename for clarity
+         self._should_stop = False # Internal flag for explicit stop
          self.line_list = line_list
-         # Only enable CLIXML filtering on Windows
          self.filter_clixml = filter_clixml and platform.system() == "Windows"
          self.stream_fd = -1
+         self.stream_name = "Unknown" # For logging
+
          if hasattr(stream, 'fileno'):
              try:
                  self.stream_fd = stream.fileno()
-             # --- MODIFICATION START: Use imported io module ---
+                 # Determine stream name for logging
+                 if stream is getattr(stream, '__stdout__', None): self.stream_name = "stdout"
+                 elif stream is getattr(stream, '__stderr__', None): self.stream_name = "stderr"
+                 else: self.stream_name = f"FD {self.stream_fd}"
              except (OSError, ValueError, io.UnsupportedOperation) as e:
-             # --- MODIFICATION END ---
-                 print(f"[StreamWorker] Warning: Could not get fileno for stream: {e}. os.read unavailable.")
+                 print(f"[StreamWorker {self.stream_name}] Warning: Could not get fileno: {e}. os.read unavailable.")
+         else:
+              self.stream_name = type(stream).__name__
+              print(f"[StreamWorker {self.stream_name}] Warning: Stream object has no fileno attribute.")
 
+
+     def stop(self):
+         """Signals the worker to stop its loop."""
+         self._should_stop = True
+         print(f"[StreamWorker {self.stream_name}] Stop signal received internally.")
 
      def run(self):
          """Reads from the stream and emits data until EOF or stop signal."""
+         print(f"[StreamWorker {self.stream_name}] Reader thread started.")
          try:
-             while not self.stop_flag_func():
+             # Loop while neither external nor internal stop flag is set
+             while not self.external_stop_flag_func() and not self._should_stop:
                  try:
                      chunk = None
-                     # Prefer os.read if fileno is valid, otherwise fallback (less reliable for non-blocking)
+                     read_attempted = False
+
                      if self.stream_fd != -1:
                          try:
+                             # Use os.read for potentially better non-blocking behavior on pipes
                              chunk = os.read(self.stream_fd, 4096)
+                             read_attempted = True
                          except BlockingIOError:
-                             # No data available right now with os.read, wait briefly
-                             QThread.msleep(10)
+                             # This is expected if no data is available, sleep briefly
+                             QThread.msleep(20) # Small sleep to yield CPU
                              continue
                          except (OSError, ValueError) as e:
-                             # File descriptor might be closed or invalid
-                             print(f"[StreamWorker] Stream read error (os.read) for FD {self.stream_fd}: {e}. Stopping stream read.")
-                             break
+                             # Errors like EBADF (bad file descriptor) likely mean the pipe closed
+                             print(f"[StreamWorker {self.stream_name}] Stream read error (os.read): {e}. Stopping read.")
+                             self._should_stop = True # Ensure loop exit
+                             break # Exit loop
                      else:
-                         # Fallback for streams without fileno (less ideal for non-blocking)
-                         # This part might block if the stream doesn't support non-blocking reads well
-                         # Check stream read readiness if possible (platform dependent, difficult)
-                         # For simplicity, we attempt read, which might block.
+                         # Fallback using stream.read() - potentially blocking
                          try:
-                             # Check if stream has data (may not be reliable/supported)
-                             # if hasattr(self.stream, 'peek') and not self.stream.peek():
-                             #    QThread.msleep(10)
-                             #    continue
-                             chunk = self.stream.read(4096) # Might block
+                             # Check if stream is closed before attempting read
+                             if hasattr(self.stream, 'closed') and self.stream.closed:
+                                 print(f"[StreamWorker {self.stream_name}] Fallback stream detected as closed.")
+                                 self._should_stop = True
+                                 break
+                             # This might block if stream doesn't support non-blocking reads
+                             chunk = self.stream.read(4096)
+                             read_attempted = True
                          except io.UnsupportedOperation:
-                             print(f"[StreamWorker] Fallback stream read failed: Unsupported operation.")
-                             break # Cannot read from this stream type
+                             print(f"[StreamWorker {self.stream_name}] Fallback stream read failed: Unsupported operation.")
+                             self._should_stop = True
+                             break
                          except Exception as read_err:
-                              print(f"[StreamWorker] Fallback stream read error: {read_err}")
-                              break # Exit on other read errors
-
-                         if not chunk and self.stream.closed: # Check if stream closed if read returns empty
-                             print(f"[StreamWorker] Fallback stream closed.")
+                             print(f"[StreamWorker {self.stream_name}] Fallback stream read error: {read_err}")
+                             self._should_stop = True
                              break
 
-                     if chunk is None: # If read returned None (e.g., error occurred) or loop continued
-                         QThread.msleep(10)
-                         continue
+                     # If read was attempted and returned no data, it usually means EOF
+                     if read_attempted and not chunk:
+                         print(f"[StreamWorker {self.stream_name}] EOF detected.")
+                         self._should_stop = True
+                         break # Exit loop
 
-                     if not chunk: # End of stream (read returned empty bytes)
-                         print(f"[StreamWorker] EOF detected for FD {self.stream_fd if self.stream_fd != -1 else 'N/A'}.")
-                         break
+                     # If a chunk was successfully read
+                     if chunk:
+                         # Check flags again *after* potential blocking read
+                         if self.external_stop_flag_func() or self._should_stop:
+                              print(f"[StreamWorker {self.stream_name}] Stop flag set after read, discarding chunk.")
+                              break
 
-                     if not self.stop_flag_func(): # Check flag again after potentially blocking read
                          emit_chunk = True
                          if self.line_list is not None:
                              self.line_list.append(chunk) # Store raw chunk
 
-                         # --- CLIXML Filtering (if enabled) ---
                          if self.filter_clixml:
                              try:
-                                 # Basic check for typical CLIXML start sequence in PowerShell errors
-                                 # This is heuristic and might filter too much/little
                                  if chunk.strip().startswith(b"#< CLIXML"):
                                      emit_chunk = False
-                                     print("[StreamWorker] Filtered potential CLIXML block from stderr.")
-                             except Exception as filter_err:
-                                 # Ignore decoding errors during filtering check
-                                 print(f"[StreamWorker] Warning: Error during CLIXML filter check: {filter_err}")
-                                 pass
-                         # --- End Filtering ---
+                                     # print(f"[StreamWorker {self.stream_name}] Filtered potential CLIXML block.") # Debug log
+                             except Exception: pass # Ignore errors during filtering check
 
                          if emit_chunk:
                              try:
                                  self.output_ready.emit(chunk)
                              except RuntimeError: # Target object likely deleted
-                                 print("[StreamWorker] Target for signal emission seems to have been deleted. Stopping.")
+                                 print(f"[StreamWorker {self.stream_name}] Target for signal emission deleted. Stopping.")
+                                 self._should_stop = True
                                  break
+                     else:
+                        # If no chunk was read (e.g., non-blocking read returned nothing), sleep briefly
+                        QThread.msleep(20)
+
                  except Exception as e:
-                     # Catch unexpected errors during the read loop
-                     fd_info = self.stream_fd if self.stream_fd != -1 else 'N/A'
-                     print(f"[StreamWorker] Unexpected error in read loop for FD {fd_info}: {e}")
+                     print(f"[StreamWorker {self.stream_name}] Unexpected error in read loop: {e}")
                      traceback.print_exc()
-                     break # Exit loop on unexpected error
+                     self._should_stop = True # Exit loop on unexpected error
+                     break
          finally:
-             # Ensure stream is closed (though Popen should handle it on process exit)
-             try:
-                 if hasattr(self.stream, 'closed') and not self.stream.closed:
-                     self.stream.close()
-             except Exception as close_err:
-                  print(f"[StreamWorker] Error closing stream: {close_err}")
-             # Signal that this specific stream worker is done
+             print(f"[StreamWorker {self.stream_name}] Read loop finished (Should Stop: {self._should_stop}, External Stop: {self.external_stop_flag_func()}).")
+             # Do NOT close the stream here - Popen manages the pipe lifecycle.
+             # Let the command_executor handle closing if necessary (though usually not needed).
              try:
                  self.finished.emit()
+                 print(f"[StreamWorker {self.stream_name}] Finished signal emitted.")
              except RuntimeError:
-                 pass # Target object likely deleted if main thread closed early
+                 print(f"[StreamWorker {self.stream_name}] Warning: Could not emit finished signal (target likely deleted).")
+             except Exception as sig_err:
+                  print(f"[StreamWorker {self.stream_name}] Error emitting finished signal: {sig_err}")

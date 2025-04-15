@@ -1,0 +1,1323 @@
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Logging initialized successfully using core.logging_config.
+2025-04-16 01:51:33 - DEBUG    - core.workers              - MainThread - Attempting to import 'uiautomation' library...
+2025-04-16 01:51:33 - DEBUG    - comtypes                  - MainThread - CoInitializeEx(None, 2)
+2025-04-16 01:51:33 - INFO     - comtypes.client._code_cache - MainThread - Imported existing <module 'comtypes.gen' from 'C:\\Users\\yeahhe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-04-16 01:51:33 - INFO     - comtypes.client._code_cache - MainThread - Using writeable comtypes cache directory: 'C:\Users\yeahhe\AppData\Local\Programs\Python\Python313\Lib\site-packages\comtypes\gen'
+2025-04-16 01:51:33 - DEBUG    - core.workers              - MainThread - Verifying 'uiautomation' basic functionality...
+2025-04-16 01:51:33 - ERROR    - core.workers              - MainThread - Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.
+2025-04-16 01:51:33 - INFO     - core.workers              - MainThread - GUI Controller features disabled (Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.). Defining fallbacks.
+2025-04-16 01:51:33 - DEBUG    - core.workers              - MainThread - urllib3 Retry strategy available.
+2025-04-16 01:51:33 - DEBUG    - core.workers              - MainThread - Mapping key names to uiautomation constants.
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Application running as script. Main script: d:\Code\PowerAgent\main.py. Base directory: d:\Code\PowerAgent
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - --- Starting PowerAgent ---
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - PID: 24752
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Operating System: Windows 11 (10.0.26100) Machine: AMD64
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Python Version: 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - PySide6 Version: 6.9.0, Qt Version: 6.9.0
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Windows AppUserModelID set to: YourOrgName.PowerAgent.PowerAgent.1.0
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Qt Organization Name: 'YourOrgName', Application Name: 'PowerAgent'
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Loading application configuration...
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Loading configuration from QSettings...
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Settings file exists: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loading [api] settings group...
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded API Key: Present
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded API URL: https://api-proxy.me/groq
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loading [general] settings group...
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Auto Startup Enabled: False
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Theme (raw): system
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Include CLI Context: True
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Selected Model ID (raw): meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Include Timestamp: False
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Enable Multi-Step: True
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Multi-Step Max Iterations: 20
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Loaded Auto Include UI Info: False
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Validated Theme: system
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Available models based on Model ID String: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Validated Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Configuration loaded - Theme: system, AutoStart: False, IncludeCLIContext: True, IncludeTimestamp: False, EnableMultiStep: True, MaxIterations: 20, AutoIncludeUI: False, SelectedModel: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Final config load check: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Configuration load status: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:51:33 - DEBUG    - __main__                  - MainThread - Creating QApplication instance.
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Default application font set: Family='Microsoft YaHei UI', Size=10pt
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Applying initial application theme: 'system'
+2025-04-16 01:51:33 - INFO     - __main__                  - MainThread - Creating MainWindow instance...
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - --- MainWindow Initializing ---
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - Using provided application base directory.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Application Base Directory set to: d:\Code\PowerAgent
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Detected Launch Directory (Initial CWD): d:\Code
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Reference 'Space' directory path: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Ensured reference 'Space' directory exists.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - Initializing state variables...
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Initial internal CWD state set to Launch Directory: d:\Code
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - State variables initialized.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Loading initial state (Chat/CLI History, etc.)...
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Loading application state...
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - Default CWD set to initial directory: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - Loading state group...
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - State group loaded.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CWD...
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Found saved directory in settings: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Saved directory is valid. Using: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Internal CWD state set to: d:\Code\PowerAgent\Space (OS chdir will be attempted later in __init__)
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - Processing saved conversation history...
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Loaded 0 conversation history items.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - conversation_history deque updated.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CLI history...
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Loaded 23 CLI history items.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_state     - MainThread - cli_command_history deque updated and index reset.
+2025-04-16 01:51:33 - INFO     - gui.main_window_state     - MainThread - Application state loading process finished.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - State loaded. Internal CWD is now: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Attempting to sync OS process CWD to internal state: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Successfully set OS process CWD to: d:\Code\PowerAgent\Space
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - CWD synchronization process finished.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - Setting up basic window properties (title, geometry, icon)...
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_updates   - MainThread - Setting main window icon...
+2025-04-16 01:51:33 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'poweragent' not found and fallback 'icon.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:51:33 - INFO     - gui.main_window_updates   - MainThread - Main window icon set.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - Basic window setup complete.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Setting up UI elements...
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Calling create_ui_elements...
+2025-04-16 01:51:33 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'edit-clear-history' not found and fallback 'clear_cli.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - create_ui_elements finished.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - UI elements created and assigned.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window           - MainThread - Restoring splitter state...
+2025-04-16 01:51:33 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:51:33 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:51:33 - WARNING  - gui.main_window           - MainThread - Invalid splitter state type found in settings: <class 'PySide6.QtCore.QByteArray'>. Setting defaults.
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Setting default splitter sizes: CLI=467, Chat=383
+2025-04-16 01:51:33 - INFO     - gui.main_window           - MainThread - Applying theme-specific styles...
+2025-04-16 01:51:33 - INFO     - gui.main_window_updates   - MainThread - Applying styles for theme: 'system'
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_updates   - MainThread - Generating minimal QSS for system theme.
+2025-04-16 01:51:33 - DEBUG    - gui.main_window_updates   - MainThread - Applying generated QSS (Length: 1544).
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Styles applied successfully for theme 'system'.
+2025-04-16 01:51:34 - INFO     - gui.main_window           - MainThread - Loading and applying display state (history, etc.)...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Applying loaded state to UI (History items: 0)...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Clearing chat display and internal history before applying loaded state...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Applied 0 loaded history items to display and internal deque.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Updating model selector based on loaded state...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Model selector UI text changed from '' to 'meta-llama/llama-4-maverick-17b-128e-instruct'.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt based on loaded state...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Finished applying loaded state to UI.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Installing event filters for focus switching...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Installed event filter on cli_input.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Installed event filter on chat_input.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Updating initial status indicator and model selector...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:51:34 - INFO     - gui.main_window           - MainThread - Adding initial welcome message.
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='System', AddToHistory=False, Message='欢迎使用 PowerAgent！当前工作目录已设置为您的启动目录: 'd:\Code\PowerAgent\Space'。\n输入 '/help' 查看命令。'
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 01:51:34 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Updating initial CLI prompt...
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:51:34 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:51:34 - DEBUG    - gui.main_window           - MainThread - Setting initial focus to CLI input.
+2025-04-16 01:51:34 - INFO     - gui.main_window           - MainThread - --- MainWindow Initialization Finished (0.317s) ---
+2025-04-16 01:51:34 - INFO     - __main__                  - MainThread - Showing MainWindow...
+2025-04-16 01:51:34 - INFO     - __main__                  - MainThread - MainWindow shown successfully.
+2025-04-16 01:51:34 - INFO     - __main__                  - MainThread - Starting Qt application event loop...
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Close event triggered.
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Initiating application shutdown sequence...
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Stopping API worker thread (if running)...
+2025-04-16 01:51:35 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop API worker thread...
+2025-04-16 01:51:35 - INFO     - gui.main_window_workers   - MainThread - No active API worker thread found to stop.
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Stopping Manual Command worker thread (if running)...
+2025-04-16 01:51:35 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop Manual Command worker thread...
+2025-04-16 01:51:35 - INFO     - gui.main_window_workers   - MainThread - No active manual command worker thread found to stop.
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - No active worker threads needed waiting.
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Saving final application state before closing...
+2025-04-16 01:51:35 - INFO     - gui.main_window_state     - MainThread - Skipping save_state during close sequence.
+2025-04-16 01:51:35 - INFO     - gui.main_window           - MainThread - Accepting close event. Exiting application.
+2025-04-16 01:51:35 - INFO     - __main__                  - MainThread - Qt application event loop finished. Exit code: 0
+2025-04-16 01:51:35 - INFO     - __main__                  - MainThread - --- Exiting PowerAgent (Final Exit Code: 0) ---
+2025-04-16 01:51:35 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - Calling CoUninitialize()
+2025-04-16 01:51:35 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - CoUninitialize() done.
+2025-04-16 01:54:34 - INFO     - __main__                  - MainThread - Logging initialized successfully using core.logging_config.
+2025-04-16 01:54:34 - DEBUG    - core.workers              - MainThread - Attempting to import 'uiautomation' library...
+2025-04-16 01:54:34 - DEBUG    - comtypes                  - MainThread - CoInitializeEx(None, 2)
+2025-04-16 01:54:35 - INFO     - comtypes.client._code_cache - MainThread - Imported existing <module 'comtypes.gen' from 'C:\\Users\\yeahhe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-04-16 01:54:35 - INFO     - comtypes.client._code_cache - MainThread - Using writeable comtypes cache directory: 'C:\Users\yeahhe\AppData\Local\Programs\Python\Python313\Lib\site-packages\comtypes\gen'
+2025-04-16 01:54:35 - DEBUG    - core.workers              - MainThread - Verifying 'uiautomation' basic functionality...
+2025-04-16 01:54:35 - ERROR    - core.workers              - MainThread - Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.
+2025-04-16 01:54:35 - INFO     - core.workers              - MainThread - GUI Controller features disabled (Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.). Defining fallbacks.
+2025-04-16 01:54:35 - DEBUG    - core.workers              - MainThread - urllib3 Retry strategy available.
+2025-04-16 01:54:35 - DEBUG    - core.workers              - MainThread - Mapping key names to uiautomation constants.
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Application running as script. Main script: d:\Code\PowerAgent\main.py. Base directory: d:\Code\PowerAgent
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - --- Starting PowerAgent ---
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - PID: 25920
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Operating System: Windows 11 (10.0.26100) Machine: AMD64
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Python Version: 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - PySide6 Version: 6.9.0, Qt Version: 6.9.0
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Windows AppUserModelID set to: YourOrgName.PowerAgent.PowerAgent.1.0
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Qt Organization Name: 'YourOrgName', Application Name: 'PowerAgent'
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Loading application configuration...
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Loading configuration from QSettings...
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Settings file exists: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loading [api] settings group...
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded API Key: Present
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded API URL: https://api-proxy.me/groq
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loading [general] settings group...
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Auto Startup Enabled: False
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Theme (raw): system
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Include CLI Context: True
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Selected Model ID (raw): meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Include Timestamp: False
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Enable Multi-Step: True
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Multi-Step Max Iterations: 20
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Loaded Auto Include UI Info: False
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Validated Theme: system
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Available models based on Model ID String: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Validated Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Configuration loaded - Theme: system, AutoStart: False, IncludeCLIContext: True, IncludeTimestamp: False, EnableMultiStep: True, MaxIterations: 20, AutoIncludeUI: False, SelectedModel: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Final config load check: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Configuration load status: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:54:35 - DEBUG    - __main__                  - MainThread - Creating QApplication instance.
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Default application font set: Family='Microsoft YaHei UI', Size=10pt
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Applying initial application theme: 'system'
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Creating MainWindow instance...
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - --- MainWindow Initializing ---
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Using provided application base directory.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Application Base Directory set to: d:\Code\PowerAgent
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Detected Launch Directory (Initial CWD): d:\Code
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Reference 'Space' directory path: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Ensured reference 'Space' directory exists.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Initializing state variables...
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Initial internal CWD state set to Launch Directory: d:\Code
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - State variables initialized.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Loading initial state (Chat/CLI History, etc.)...
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Loading application state...
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - Default CWD set to initial directory: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - Loading state group...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - State group loaded.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CWD...
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Found saved directory in settings: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Saved directory is valid. Using: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Internal CWD state set to: d:\Code\PowerAgent\Space (OS chdir will be attempted later in __init__)
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - Processing saved conversation history...
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Loaded 0 conversation history items.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - conversation_history deque updated.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CLI history...
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Loaded 23 CLI history items.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_state     - MainThread - cli_command_history deque updated and index reset.
+2025-04-16 01:54:35 - INFO     - gui.main_window_state     - MainThread - Application state loading process finished.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - State loaded. Internal CWD is now: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Attempting to sync OS process CWD to internal state: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Successfully set OS process CWD to: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - CWD synchronization process finished.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Setting up basic window properties (title, geometry, icon)...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Setting main window icon...
+2025-04-16 01:54:35 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'poweragent' not found and fallback 'icon.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Main window icon set.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Basic window setup complete.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Setting up UI elements...
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Calling create_ui_elements...
+2025-04-16 01:54:35 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'edit-clear-history' not found and fallback 'clear_cli.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - create_ui_elements finished.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - UI elements created and assigned.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Restoring splitter state...
+2025-04-16 01:54:35 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:54:35 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:54:35 - WARNING  - gui.main_window           - MainThread - Invalid splitter state type found in settings: <class 'PySide6.QtCore.QByteArray'>. Setting defaults.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Setting default splitter sizes: CLI=467, Chat=383
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Applying theme-specific styles...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Applying styles for theme: 'system'
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Generating minimal QSS for system theme.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Applying generated QSS (Length: 1544).
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Styles applied successfully for theme 'system'.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Loading and applying display state (history, etc.)...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Applying loaded state to UI (History items: 0)...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Clearing chat display and internal history before applying loaded state...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Applied 0 loaded history items to display and internal deque.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Updating model selector based on loaded state...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Model selector UI text changed from '' to 'meta-llama/llama-4-maverick-17b-128e-instruct'.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt based on loaded state...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Finished applying loaded state to UI.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Installing event filters for focus switching...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Installed event filter on cli_input.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Installed event filter on chat_input.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Updating initial status indicator and model selector...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Adding initial welcome message.
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='System', AddToHistory=False, Message='欢迎使用 PowerAgent！当前工作目录已设置为您的启动目录: 'd:\Code\PowerAgent\Space'。\n输入 '/help' 查看命令。'
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 01:54:35 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 01:54:35 - DEBUG    - gui.main_window           - MainThread - Updating initial CLI prompt...
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:54:35 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - Setting initial focus to chat input.
+2025-04-16 01:54:35 - INFO     - gui.main_window           - MainThread - --- MainWindow Initialization Finished (0.332s) ---
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Showing MainWindow...
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - MainWindow shown successfully.
+2025-04-16 01:54:35 - INFO     - __main__                  - MainThread - Starting Qt application event loop...
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Close event triggered.
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Initiating application shutdown sequence...
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Stopping API worker thread (if running)...
+2025-04-16 01:54:37 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop API worker thread...
+2025-04-16 01:54:37 - INFO     - gui.main_window_workers   - MainThread - No active API worker thread found to stop.
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Stopping Manual Command worker thread (if running)...
+2025-04-16 01:54:37 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop Manual Command worker thread...
+2025-04-16 01:54:37 - INFO     - gui.main_window_workers   - MainThread - No active manual command worker thread found to stop.
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - No active worker threads needed waiting.
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Saving final application state before closing...
+2025-04-16 01:54:37 - INFO     - gui.main_window_state     - MainThread - Skipping save_state during close sequence.
+2025-04-16 01:54:37 - INFO     - gui.main_window           - MainThread - Accepting close event. Exiting application.
+2025-04-16 01:54:37 - INFO     - __main__                  - MainThread - Qt application event loop finished. Exit code: 0
+2025-04-16 01:54:37 - INFO     - __main__                  - MainThread - --- Exiting PowerAgent (Final Exit Code: 0) ---
+2025-04-16 01:54:37 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - Calling CoUninitialize()
+2025-04-16 01:54:37 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - CoUninitialize() done.
+2025-04-16 01:55:17 - INFO     - __main__                  - MainThread - Logging initialized successfully using core.logging_config.
+2025-04-16 01:55:18 - DEBUG    - core.workers              - MainThread - Attempting to import 'uiautomation' library...
+2025-04-16 01:55:18 - DEBUG    - comtypes                  - MainThread - CoInitializeEx(None, 2)
+2025-04-16 01:55:18 - INFO     - comtypes.client._code_cache - MainThread - Imported existing <module 'comtypes.gen' from 'C:\\Users\\yeahhe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-04-16 01:55:18 - INFO     - comtypes.client._code_cache - MainThread - Using writeable comtypes cache directory: 'C:\Users\yeahhe\AppData\Local\Programs\Python\Python313\Lib\site-packages\comtypes\gen'
+2025-04-16 01:55:18 - DEBUG    - core.workers              - MainThread - Verifying 'uiautomation' basic functionality...
+2025-04-16 01:55:18 - ERROR    - core.workers              - MainThread - Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.
+2025-04-16 01:55:18 - INFO     - core.workers              - MainThread - GUI Controller features disabled (Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.). Defining fallbacks.
+2025-04-16 01:55:18 - DEBUG    - core.workers              - MainThread - urllib3 Retry strategy available.
+2025-04-16 01:55:18 - DEBUG    - core.workers              - MainThread - Mapping key names to uiautomation constants.
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Application running as script. Main script: d:\Code\PowerAgent\main.py. Base directory: d:\Code\PowerAgent
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - --- Starting PowerAgent ---
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - PID: 12280
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Operating System: Windows 11 (10.0.26100) Machine: AMD64
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Python Version: 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - PySide6 Version: 6.9.0, Qt Version: 6.9.0
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Windows AppUserModelID set to: YourOrgName.PowerAgent.PowerAgent.1.0
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Qt Organization Name: 'YourOrgName', Application Name: 'PowerAgent'
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Loading application configuration...
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Loading configuration from QSettings...
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Settings file exists: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loading [api] settings group...
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded API Key: Present
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded API URL: https://api-proxy.me/groq
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loading [general] settings group...
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Auto Startup Enabled: False
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Theme (raw): system
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Include CLI Context: True
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Selected Model ID (raw): meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Include Timestamp: False
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Enable Multi-Step: True
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Multi-Step Max Iterations: 20
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Loaded Auto Include UI Info: False
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Validated Theme: system
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Available models based on Model ID String: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Validated Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Configuration loaded - Theme: system, AutoStart: False, IncludeCLIContext: True, IncludeTimestamp: False, EnableMultiStep: True, MaxIterations: 20, AutoIncludeUI: False, SelectedModel: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Final config load check: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Configuration load status: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 01:55:18 - DEBUG    - __main__                  - MainThread - Creating QApplication instance.
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Default application font set: Family='Microsoft YaHei UI', Size=10pt
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Applying initial application theme: 'system'
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Creating MainWindow instance...
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - --- MainWindow Initializing ---
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Using provided application base directory.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Application Base Directory set to: d:\Code\PowerAgent
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Detected Launch Directory (Initial CWD): d:\Code
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Reference 'Space' directory path: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Ensured reference 'Space' directory exists.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Initializing state variables...
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Initial internal CWD state set to Launch Directory: d:\Code
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - State variables initialized.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Loading initial state (Chat/CLI History, etc.)...
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Loading application state...
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - Default CWD set to initial directory: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - Loading state group...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - State group loaded.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CWD...
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Found saved directory in settings: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Saved directory is valid. Using: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Internal CWD state set to: d:\Code\PowerAgent\Space (OS chdir will be attempted later in __init__)
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - Processing saved conversation history...
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Loaded 0 conversation history items.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - conversation_history deque updated.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CLI history...
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Loaded 23 CLI history items.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_state     - MainThread - cli_command_history deque updated and index reset.
+2025-04-16 01:55:18 - INFO     - gui.main_window_state     - MainThread - Application state loading process finished.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - State loaded. Internal CWD is now: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Attempting to sync OS process CWD to internal state: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Successfully set OS process CWD to: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - CWD synchronization process finished.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Setting up basic window properties (title, geometry, icon)...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Setting main window icon...
+2025-04-16 01:55:18 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'poweragent' not found and fallback 'icon.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Main window icon set.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Basic window setup complete.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Setting up UI elements...
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Calling create_ui_elements...
+2025-04-16 01:55:18 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'edit-clear-history' not found and fallback 'clear_cli.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - create_ui_elements finished.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - UI elements created and assigned.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Restoring splitter state...
+2025-04-16 01:55:18 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 01:55:18 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 01:55:18 - WARNING  - gui.main_window           - MainThread - Invalid splitter state type found in settings: <class 'PySide6.QtCore.QByteArray'>. Setting defaults.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Setting default splitter sizes: CLI=467, Chat=383
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Applying theme-specific styles...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Applying styles for theme: 'system'
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Generating minimal QSS for system theme.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Applying generated QSS (Length: 1544).
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Styles applied successfully for theme 'system'.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Loading and applying display state (history, etc.)...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Applying loaded state to UI (History items: 0)...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Clearing chat display and internal history before applying loaded state...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Applied 0 loaded history items to display and internal deque.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Updating model selector based on loaded state...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Model selector UI text changed from '' to 'meta-llama/llama-4-maverick-17b-128e-instruct'.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt based on loaded state...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Finished applying loaded state to UI.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Installing event filters for focus switching...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Installed event filter on cli_input.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Installed event filter on chat_input.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Updating initial status indicator and model selector...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Adding initial welcome message.
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='System', AddToHistory=False, Message='欢迎使用 PowerAgent！当前工作目录已设置为您的启动目录: 'd:\Code\PowerAgent\Space'。\n输入 '/help' 查看命令。'
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 01:55:18 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 01:55:18 - DEBUG    - gui.main_window           - MainThread - Updating initial CLI prompt...
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 01:55:18 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - Setting initial focus to chat input.
+2025-04-16 01:55:18 - INFO     - gui.main_window           - MainThread - --- MainWindow Initialization Finished (0.327s) ---
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Showing MainWindow...
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - MainWindow shown successfully.
+2025-04-16 01:55:18 - INFO     - __main__                  - MainThread - Starting Qt application event loop...
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Close event triggered.
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Initiating application shutdown sequence...
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Stopping API worker thread (if running)...
+2025-04-16 01:55:22 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop API worker thread...
+2025-04-16 01:55:22 - INFO     - gui.main_window_workers   - MainThread - No active API worker thread found to stop.
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Stopping Manual Command worker thread (if running)...
+2025-04-16 01:55:22 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop Manual Command worker thread...
+2025-04-16 01:55:22 - INFO     - gui.main_window_workers   - MainThread - No active manual command worker thread found to stop.
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - No active worker threads needed waiting.
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Saving final application state before closing...
+2025-04-16 01:55:22 - INFO     - gui.main_window_state     - MainThread - Skipping save_state during close sequence.
+2025-04-16 01:55:22 - INFO     - gui.main_window           - MainThread - Accepting close event. Exiting application.
+2025-04-16 01:55:22 - INFO     - __main__                  - MainThread - Qt application event loop finished. Exit code: 0
+2025-04-16 01:55:22 - INFO     - __main__                  - MainThread - --- Exiting PowerAgent (Final Exit Code: 0) ---
+2025-04-16 01:55:22 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - Calling CoUninitialize()
+2025-04-16 01:55:22 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - CoUninitialize() done.
+2025-04-16 02:06:36 - INFO     - __main__                  - MainThread - Logging initialized successfully using core.logging_config.
+2025-04-16 02:06:37 - DEBUG    - core.workers              - MainThread - Attempting to import 'uiautomation' library...
+2025-04-16 02:06:37 - DEBUG    - comtypes                  - MainThread - CoInitializeEx(None, 2)
+2025-04-16 02:06:37 - INFO     - comtypes.client._code_cache - MainThread - Imported existing <module 'comtypes.gen' from 'C:\\Users\\yeahhe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-04-16 02:06:37 - INFO     - comtypes.client._code_cache - MainThread - Using writeable comtypes cache directory: 'C:\Users\yeahhe\AppData\Local\Programs\Python\Python313\Lib\site-packages\comtypes\gen'
+2025-04-16 02:06:37 - DEBUG    - core.workers              - MainThread - Verifying 'uiautomation' basic functionality...
+2025-04-16 02:06:37 - ERROR    - core.workers              - MainThread - Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.
+2025-04-16 02:06:37 - INFO     - core.workers              - MainThread - GUI Controller features disabled (Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.). Defining fallbacks.
+2025-04-16 02:06:37 - DEBUG    - core.workers              - MainThread - urllib3 Retry strategy available.
+2025-04-16 02:06:37 - DEBUG    - core.workers              - MainThread - Mapping key names to uiautomation constants.
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Application running as script. Main script: d:\Code\PowerAgent\main.py. Base directory: d:\Code\PowerAgent
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - --- Starting PowerAgent ---
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - PID: 21576
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Operating System: Windows 11 (10.0.26100) Machine: AMD64
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Python Version: 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - PySide6 Version: 6.9.0, Qt Version: 6.9.0
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Windows AppUserModelID set to: YourOrgName.PowerAgent.PowerAgent.1.0
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Qt Organization Name: 'YourOrgName', Application Name: 'PowerAgent'
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Loading application configuration...
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Loading configuration from QSettings...
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Settings file exists: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loading [api] settings group...
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded API Key: Present
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded API URL: https://api-proxy.me/groq
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loading [general] settings group...
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Auto Startup Enabled: False
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Theme (raw): system
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Include CLI Context: True
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Selected Model ID (raw): meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Include Timestamp: False
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Enable Multi-Step: True
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Multi-Step Max Iterations: 20
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Loaded Auto Include UI Info: False
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Validated Theme: system
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Available models based on Model ID String: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Validated Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Configuration loaded - Theme: system, AutoStart: False, IncludeCLIContext: True, IncludeTimestamp: False, EnableMultiStep: True, MaxIterations: 20, AutoIncludeUI: False, SelectedModel: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Final config load check: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Configuration load status: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 02:06:37 - DEBUG    - __main__                  - MainThread - Creating QApplication instance.
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Default application font set: Family='Microsoft YaHei UI', Size=10pt
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Applying initial application theme: 'system'
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Creating MainWindow instance...
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - --- MainWindow Initializing ---
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Using provided application base directory.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Application Base Directory set to: d:\Code\PowerAgent
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Detected Launch Directory (Initial CWD): d:\Code
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Reference 'Space' directory path: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Ensured reference 'Space' directory exists.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Initializing state variables...
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Initial internal CWD state set to Launch Directory: d:\Code
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - State variables initialized.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Loading initial state (Chat/CLI History, etc.)...
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Loading application state...
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - Default CWD set to initial directory: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - Loading state group...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - State group loaded.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CWD...
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Found saved directory in settings: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Saved directory is valid. Using: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Internal CWD state set to: d:\Code\PowerAgent\Space (OS chdir will be attempted later in __init__)
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - Processing saved conversation history...
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Loaded 0 conversation history items.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - conversation_history deque updated.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CLI history...
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Loaded 23 CLI history items.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_state     - MainThread - cli_command_history deque updated and index reset.
+2025-04-16 02:06:37 - INFO     - gui.main_window_state     - MainThread - Application state loading process finished.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - State loaded. Internal CWD is now: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Attempting to sync OS process CWD to internal state: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Successfully set OS process CWD to: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - CWD synchronization process finished.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Setting up basic window properties (title, geometry, icon)...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Setting main window icon...
+2025-04-16 02:06:37 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'poweragent' not found and fallback 'icon.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Main window icon set.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Basic window setup complete.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Setting up UI elements...
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Calling create_ui_elements...
+2025-04-16 02:06:37 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'edit-clear-history' not found and fallback 'clear_cli.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - create_ui_elements finished.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - UI elements created and assigned.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Restoring splitter state...
+2025-04-16 02:06:37 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:06:37 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:06:37 - WARNING  - gui.main_window           - MainThread - Invalid splitter state type found in settings: <class 'PySide6.QtCore.QByteArray'>. Setting defaults.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Setting default splitter sizes: CLI=467, Chat=383
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Applying theme-specific styles...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Applying styles for theme: 'system'
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Generating minimal QSS for system theme.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Applying generated QSS (Length: 1544).
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Styles applied successfully for theme 'system'.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Loading and applying display state (history, etc.)...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Applying loaded state to UI (History items: 0)...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Clearing chat display and internal history before applying loaded state...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Applied 0 loaded history items to display and internal deque.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Updating model selector based on loaded state...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Model selector UI text changed from '' to 'meta-llama/llama-4-maverick-17b-128e-instruct'.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt based on loaded state...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Finished applying loaded state to UI.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Installing event filters for focus switching...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Installed event filter on cli_input.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Installed event filter on chat_input.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Updating initial status indicator and model selector...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Adding initial welcome message.
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='System', AddToHistory=False, Message='欢迎使用 PowerAgent！当前工作目录已设置为您的启动目录: 'd:\Code\PowerAgent\Space'。\n输入 '/help' 查看命令。'
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:06:37 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:06:37 - DEBUG    - gui.main_window           - MainThread - Updating initial CLI prompt...
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:06:37 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - Setting initial focus to chat input.
+2025-04-16 02:06:37 - INFO     - gui.main_window           - MainThread - --- MainWindow Initialization Finished (0.321s) ---
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Showing MainWindow...
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - MainWindow shown successfully.
+2025-04-16 02:06:37 - INFO     - __main__                  - MainThread - Starting Qt application event loop...
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - Send/Stop button clicked.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - API worker running state: None
+2025-04-16 02:07:03 - INFO     - gui.main_window_handlers  - MainThread - Send/Stop button clicked: Triggering send message...
+2025-04-16 02:07:03 - INFO     - gui.main_window_handlers  - MainThread - Handling send message request...
+2025-04-16 02:07:03 - INFO     - gui.main_window_handlers  - MainThread - User prompt received (length 5): '点击浏览器'
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - Chat input cleared.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - Selected model: 'meta-llama/llama-4-maverick-17b-128e-instruct', Is placeholder: False, API Configured: True
+2025-04-16 02:07:03 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='User', AddToHistory=True, Message='点击浏览器'
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: User).
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:07:03 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - Prepared history for worker (length: 1).
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_handlers  - MainThread - CLI context inclusion enabled, but CLI output is empty.
+2025-04-16 02:07:03 - INFO     - gui.main_window_handlers  - MainThread - Starting ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct...
+2025-04-16 02:07:03 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=True, TaskType='api'
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=None, CurrentManual=None -> NextAPI=True, NextManual=False
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: False
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:07:03 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'process-stop' not found and fallback 'stop.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Set button to STOP state.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=True
+2025-04-16 02:07:03 - INFO     - gui.main_window_workers   - MainThread - Attempting to start ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread Parameters:
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread -   History Length: 1
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread -   Prompt Length: 5
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread -   CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:03 - INFO     - core.workers              - MainThread - Initializing ApiWorkerThread...
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread - ApiWorkerThread Init Params:
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   API Key Provided: True
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   Initial History Length: 1
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   Initial Prompt Length: 5
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   Initial CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   Keyboard Available: True
+2025-04-16 02:07:03 - DEBUG    - core.workers              - MainThread -   GUI Available: False
+2025-04-16 02:07:03 - INFO     - core.workers              - MainThread - ApiWorkerThread initialized.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread instance created.
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - Connecting signals for ApiWorkerThread...
+2025-04-16 02:07:03 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread signals connected.
+2025-04-16 02:07:03 - INFO     - gui.main_window_workers   - MainThread - ApiWorkerThread started successfully.
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() started.
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - GUI Automation not available. GUI controller will not be initialized.
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Multi-step mode enabled: True
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Running in iterative multi-step mode.
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Max iterations set to: 20
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - --- Multi-Step Iteration 1/20 Start ---
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Iteration 1: Sending API request...
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Preparing to send message to model...
+2025-04-16 02:07:03 - DEBUG    - core.workers              - Dummy-1    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:07:03 - DEBUG    - core.workers              - Dummy-1    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:07:03 - DEBUG    - core.workers              - Dummy-1    - Processing history (Size: 1) for API payload...
+2025-04-16 02:07:03 - DEBUG    - core.workers              - Dummy-1    - Added 1 messages from history.
+2025-04-16 02:07:03 - DEBUG    - core.workers              - Dummy-1    - Requests session configured with retry strategy.
+2025-04-16 02:07:03 - INFO     - core.workers              - Dummy-1    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 2, Approx Size: 1552 bytes)
+2025-04-16 02:07:03 - DEBUG    - urllib3.connectionpool    - Dummy-1    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:07:12 - DEBUG    - urllib3.connectionpool    - Dummy-1    - https://api-proxy.me:443 "POST /groq/v1/chat/completions HTTP/1.1" 200 None
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - API Response Status Code: 200
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - API Response JSON (Top Level Keys): ['id', 'object', 'created', 'model', 'choices', 'usage', 'usage_breakdown', 'system_fingerprint', 'x_groq']
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - API call successful. Finish reason: stop
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Requests session closed.
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Iteration 1: API call finished in 8.91s.
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Raw model reply: `<gui_action>` click browser....
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Cleaning <think> tags...
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Reply after <think>/<continue> cleaning: `<gui_action>` click browser....
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Cleaning action tags for UI display...
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Text to emit to UI: `<gui_action>` click browser....
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Emitting api_result signal (Time: 8.91s, Msg: `<gui_action>` click browser....)
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Iteration 1: Emitted api_result to UI.
+2025-04-16 02:07:12 - INFO     - gui.main_window_workers   - MainThread - Handling API result (Elapsed: 8.91s). Reply preview: '`<gui_action>` click browser....'
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Iteration 1: Parsing reply for actions...
+2025-04-16 02:07:12 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='Model', AddToHistory=True, Message='`<gui_action>` click browser.'
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Iteration 1: No executable action tag found in reply.
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: Model).
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Iteration 1: No action found or executed. Breaking loop.
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - Multi-step iterative loop finished after 1 iteration(s).
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() sequence finished (is_running=True).
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - No GuiController instance to delete.
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:07:12 - DEBUG    - core.workers              - Dummy-1    - Emitting task_finished signal.
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_updates   - MainThread - Inserting timestamp:  (耗时: 8.91 秒)
+2025-04-16 02:07:12 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() finished.
+2025-04-16 02:07:12 - INFO     - gui.main_window_workers   - MainThread - Api worker thread finished signal received.
+2025-04-16 02:07:12 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=False, TaskType='api'
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=False, CurrentManual=None -> NextAPI=False, NextManual=False
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: True
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Set button to SEND state (Enabled: True).
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=False
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Task 'api' finished, but another task is still running. Not setting focus.
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - Clearing reference to finished ApiWorkerThread.
+2025-04-16 02:07:12 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:07:12 - DEBUG    - gui.main_window_workers   - MainThread - API result added to chat display.
+2025-04-16 02:07:24 - INFO     - gui.main_window_handlers  - MainThread - Handling clear chat request...
+2025-04-16 02:07:24 - INFO     - gui.main_window_handlers  - MainThread - Stopping API worker before clearing chat...
+2025-04-16 02:07:24 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop API worker thread...
+2025-04-16 02:07:24 - INFO     - gui.main_window_workers   - MainThread - No active API worker thread found to stop.
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_handlers  - MainThread - Chat history display cleared.
+2025-04-16 02:07:24 - INFO     - gui.main_window_handlers  - MainThread - Internal conversation history deque cleared (was 2 items).
+2025-04-16 02:07:24 - INFO     - gui.main_window_state     - MainThread - Attempting to save application state...
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - State to save:
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread -   Chat History Items: 0
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread -   CLI History Items: 23
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread -   Current Directory: d:\Code\PowerAgent\Space
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread -   Selected Model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - Saving state group...
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - State group saved.
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - Saving UI group (splitter state)...
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - Splitter state saved (Size: 31 bytes).
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - Updating config module with current selected model...
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - get_current_config() called.
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Saving configuration to QSettings...
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - Saving values:
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   API Key: ****
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Auto Startup: False
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Theme: system
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Include CLI Context: True
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Include Timestamp: False
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Enable Multi-Step: True
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Multi-Step Max Iterations: 20
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread -   Auto Include UI Info: False
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - Syncing settings to file...
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Settings saved successfully to: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Global config variables updated with saved values.
+2025-04-16 02:07:24 - DEBUG    - core.config               - MainThread - Updated globals - AutoStart=False, Theme=system, SelectedModel=meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:24 - INFO     - core.config               - MainThread - Applying auto-startup setting (False)...
+2025-04-16 02:07:24 - DEBUG    - gui.main_window_state     - MainThread - Selected model ID (meta-llama/llama-4-maverick-17b-128e-instruct) passed to config.save_config.
+2025-04-16 02:07:24 - INFO     - gui.main_window_state     - MainThread - Application state saved successfully.
+2025-04-16 02:07:24 - INFO     - gui.main_window_handlers  - MainThread - Clear chat operation finished.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - Send/Stop button clicked.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - API worker running state: None
+2025-04-16 02:07:31 - INFO     - gui.main_window_handlers  - MainThread - Send/Stop button clicked: Triggering send message...
+2025-04-16 02:07:31 - INFO     - gui.main_window_handlers  - MainThread - Handling send message request...
+2025-04-16 02:07:31 - INFO     - gui.main_window_handlers  - MainThread - User prompt received (length 5): '打开记事本'
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - Chat input cleared.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - Selected model: 'meta-llama/llama-4-maverick-17b-128e-instruct', Is placeholder: False, API Configured: True
+2025-04-16 02:07:31 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='User', AddToHistory=True, Message='打开记事本'
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: User).
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:07:31 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - Prepared history for worker (length: 1).
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_handlers  - MainThread - CLI context inclusion enabled, but CLI output is empty.
+2025-04-16 02:07:31 - INFO     - gui.main_window_handlers  - MainThread - Starting ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct...
+2025-04-16 02:07:31 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=True, TaskType='api'
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=None, CurrentManual=None -> NextAPI=True, NextManual=False
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: False
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:07:31 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'process-stop' not found and fallback 'stop.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Set button to STOP state.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=True
+2025-04-16 02:07:31 - INFO     - gui.main_window_workers   - MainThread - Attempting to start ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread Parameters:
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread -   History Length: 1
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread -   Prompt Length: 5
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread -   CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:31 - INFO     - core.workers              - MainThread - Initializing ApiWorkerThread...
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread - ApiWorkerThread Init Params:
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   API Key Provided: True
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   Initial History Length: 1
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   Initial Prompt Length: 5
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   Initial CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   Keyboard Available: True
+2025-04-16 02:07:31 - DEBUG    - core.workers              - MainThread -   GUI Available: False
+2025-04-16 02:07:31 - INFO     - core.workers              - MainThread - ApiWorkerThread initialized.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread instance created.
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - Connecting signals for ApiWorkerThread...
+2025-04-16 02:07:31 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread signals connected.
+2025-04-16 02:07:31 - INFO     - gui.main_window_workers   - MainThread - ApiWorkerThread started successfully.
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - ApiWorkerThread run() started.
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - GUI Automation not available. GUI controller will not be initialized.
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Multi-step mode enabled: True
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Running in iterative multi-step mode.
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Max iterations set to: 20
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - --- Multi-Step Iteration 1/20 Start ---
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Sending API request...
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Preparing to send message to model...
+2025-04-16 02:07:31 - DEBUG    - core.workers              - Dummy-2    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:07:31 - DEBUG    - core.workers              - Dummy-2    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:07:31 - DEBUG    - core.workers              - Dummy-2    - Processing history (Size: 1) for API payload...
+2025-04-16 02:07:31 - DEBUG    - core.workers              - Dummy-2    - Added 1 messages from history.
+2025-04-16 02:07:31 - DEBUG    - core.workers              - Dummy-2    - Requests session configured with retry strategy.
+2025-04-16 02:07:31 - INFO     - core.workers              - Dummy-2    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 2, Approx Size: 1552 bytes)
+2025-04-16 02:07:31 - DEBUG    - urllib3.connectionpool    - Dummy-2    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:07:36 - DEBUG    - urllib3.connectionpool    - Dummy-2    - https://api-proxy.me:443 "POST /groq/v1/chat/completions HTTP/1.1" 200 None
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - API Response Status Code: 200
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - API Response JSON (Top Level Keys): ['id', 'object', 'created', 'model', 'choices', 'usage', 'usage_breakdown', 'system_fingerprint', 'x_groq']
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - API call successful. Finish reason: stop
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Requests session closed.
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Iteration 1: API call finished in 4.92s.
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Raw model reply: `<cmd> notepad.exe`...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Cleaning <think> tags...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Reply after <think>/<continue> cleaning: `<cmd> notepad.exe`...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Cleaning action tags for UI display...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Text to emit to UI: `<cmd> notepad.exe`...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Emitting api_result signal (Time: 4.92s, Msg: `<cmd> notepad.exe`...)
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Iteration 1: Emitted api_result to UI.
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Iteration 1: Parsing reply for actions...
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Iteration 1: No executable action tag found in reply.
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Iteration 1: No action found or executed. Breaking loop.
+2025-04-16 02:07:36 - INFO     - gui.main_window_workers   - MainThread - Handling API result (Elapsed: 4.92s). Reply preview: '`<cmd> notepad.exe`...'
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - Multi-step iterative loop finished after 1 iteration(s).
+2025-04-16 02:07:36 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='Model', AddToHistory=True, Message='`<cmd> notepad.exe`'
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - ApiWorkerThread run() sequence finished (is_running=True).
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: Model).
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - No GuiController instance to delete.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:07:36 - DEBUG    - core.workers              - Dummy-2    - Emitting task_finished signal.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:07:36 - INFO     - core.workers              - Dummy-2    - ApiWorkerThread run() finished.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_updates   - MainThread - Inserting timestamp:  (耗时: 4.92 秒)
+2025-04-16 02:07:36 - INFO     - gui.main_window_workers   - MainThread - Api worker thread finished signal received.
+2025-04-16 02:07:36 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=False, TaskType='api'
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=False, CurrentManual=None -> NextAPI=False, NextManual=False
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: True
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Set button to SEND state (Enabled: True).
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=False
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Task 'api' finished, but another task is still running. Not setting focus.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - Clearing reference to finished ApiWorkerThread.
+2025-04-16 02:07:36 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:07:36 - DEBUG    - gui.main_window_workers   - MainThread - API result added to chat display.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - Send/Stop button clicked.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - API worker running state: None
+2025-04-16 02:07:51 - INFO     - gui.main_window_handlers  - MainThread - Send/Stop button clicked: Triggering send message...
+2025-04-16 02:07:51 - INFO     - gui.main_window_handlers  - MainThread - Handling send message request...
+2025-04-16 02:07:51 - INFO     - gui.main_window_handlers  - MainThread - User prompt received (length 3): '门打开'
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - Chat input cleared.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - Selected model: 'meta-llama/llama-4-maverick-17b-128e-instruct', Is placeholder: False, API Configured: True
+2025-04-16 02:07:51 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='User', AddToHistory=True, Message='门打开'
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: User).
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:07:51 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - Prepared history for worker (length: 3).
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_handlers  - MainThread - CLI context inclusion enabled, but CLI output is empty.
+2025-04-16 02:07:51 - INFO     - gui.main_window_handlers  - MainThread - Starting ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct...
+2025-04-16 02:07:51 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=True, TaskType='api'
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=None, CurrentManual=None -> NextAPI=True, NextManual=False
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: False
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:07:51 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'process-stop' not found and fallback 'stop.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Set button to STOP state.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=True
+2025-04-16 02:07:51 - INFO     - gui.main_window_workers   - MainThread - Attempting to start ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread Parameters:
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread -   History Length: 3
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread -   Prompt Length: 3
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread -   CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:51 - INFO     - core.workers              - MainThread - Initializing ApiWorkerThread...
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread - ApiWorkerThread Init Params:
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   API Key Provided: True
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   Initial History Length: 3
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   Initial Prompt Length: 3
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   Initial CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   Keyboard Available: True
+2025-04-16 02:07:51 - DEBUG    - core.workers              - MainThread -   GUI Available: False
+2025-04-16 02:07:51 - INFO     - core.workers              - MainThread - ApiWorkerThread initialized.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread instance created.
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - Connecting signals for ApiWorkerThread...
+2025-04-16 02:07:51 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread signals connected.
+2025-04-16 02:07:51 - INFO     - gui.main_window_workers   - MainThread - ApiWorkerThread started successfully.
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - ApiWorkerThread run() started.
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - GUI Automation not available. GUI controller will not be initialized.
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Multi-step mode enabled: True
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Running in iterative multi-step mode.
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Max iterations set to: 20
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - --- Multi-Step Iteration 1/20 Start ---
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Iteration 1: Sending API request...
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Preparing to send message to model...
+2025-04-16 02:07:51 - DEBUG    - core.workers              - Dummy-3    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:07:51 - DEBUG    - core.workers              - Dummy-3    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:07:51 - DEBUG    - core.workers              - Dummy-3    - Processing history (Size: 3) for API payload...
+2025-04-16 02:07:51 - DEBUG    - core.workers              - Dummy-3    - Added 3 messages from history.
+2025-04-16 02:07:51 - DEBUG    - core.workers              - Dummy-3    - Requests session configured with retry strategy.
+2025-04-16 02:07:51 - INFO     - core.workers              - Dummy-3    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 4, Approx Size: 1657 bytes)
+2025-04-16 02:07:51 - DEBUG    - urllib3.connectionpool    - Dummy-3    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Logging initialized successfully using core.logging_config.
+2025-04-16 02:07:59 - DEBUG    - core.workers              - MainThread - Attempting to import 'uiautomation' library...
+2025-04-16 02:07:59 - DEBUG    - comtypes                  - MainThread - CoInitializeEx(None, 2)
+2025-04-16 02:07:59 - INFO     - comtypes.client._code_cache - MainThread - Imported existing <module 'comtypes.gen' from 'C:\\Users\\yeahhe\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\comtypes\\gen\\__init__.py'>
+2025-04-16 02:07:59 - INFO     - comtypes.client._code_cache - MainThread - Using writeable comtypes cache directory: 'C:\Users\yeahhe\AppData\Local\Programs\Python\Python313\Lib\site-packages\comtypes\gen'
+2025-04-16 02:07:59 - DEBUG    - core.workers              - MainThread - Verifying 'uiautomation' basic functionality...
+2025-04-16 02:07:59 - ERROR    - core.workers              - MainThread - Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.
+2025-04-16 02:07:59 - INFO     - core.workers              - MainThread - GUI Controller features disabled (Failed to verify 'uiautomation' functionality: GetRootControl() got an unexpected keyword argument 'wait_time'. GUI control likely disabled.). Defining fallbacks.
+2025-04-16 02:07:59 - DEBUG    - core.workers              - MainThread - urllib3 Retry strategy available.
+2025-04-16 02:07:59 - DEBUG    - core.workers              - MainThread - Mapping key names to uiautomation constants.
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Application running as script. Main script: d:\Code\PowerAgent\main.py. Base directory: d:\Code\PowerAgent
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - --- Starting PowerAgent ---
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - PID: 10964
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Operating System: Windows 11 (10.0.26100) Machine: AMD64
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Python Version: 3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - PySide6 Version: 6.9.0, Qt Version: 6.9.0
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Windows AppUserModelID set to: YourOrgName.PowerAgent.PowerAgent.1.0
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Qt Organization Name: 'YourOrgName', Application Name: 'PowerAgent'
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Loading application configuration...
+2025-04-16 02:07:59 - INFO     - core.config               - MainThread - Loading configuration from QSettings...
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:07:59 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:07:59 - INFO     - core.config               - MainThread - Settings file exists: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loading [api] settings group...
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded API Key: Present
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded API URL: https://api-proxy.me/groq
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Model ID String: meta-llama/llama-4-maverick-17b-128e-instruct,meta-llama/llama-4-scout-17b-16e-instruct,deepseek-r1-distill-llama-70b,deepseek-r1-distill-qwen-32b,gemma2-9b-it
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loading [general] settings group...
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Auto Startup Enabled: False
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Theme (raw): system
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Include CLI Context: True
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Selected Model ID (raw): meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Include Timestamp: False
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Enable Multi-Step: True
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Multi-Step Max Iterations: 20
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Loaded Auto Include UI Info: False
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Validated Theme: system
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Available models based on Model ID String: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:07:59 - DEBUG    - core.config               - MainThread - Validated Selected Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:59 - INFO     - core.config               - MainThread - Configuration loaded - Theme: system, AutoStart: False, IncludeCLIContext: True, IncludeTimestamp: False, EnableMultiStep: True, MaxIterations: 20, AutoIncludeUI: False, SelectedModel: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:07:59 - INFO     - core.config               - MainThread - Final config load check: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 02:07:59 - INFO     - __main__                  - MainThread - Configuration load status: Success=True, Message='Configuration loaded successfully.'
+2025-04-16 02:07:59 - DEBUG    - __main__                  - MainThread - Creating QApplication instance.
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - Default application font set: Family='Microsoft YaHei UI', Size=10pt
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - Applying initial application theme: 'system'
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - Creating MainWindow instance...
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - --- MainWindow Initializing ---
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Using provided application base directory.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Application Base Directory set to: d:\Code\PowerAgent
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Detected Launch Directory (Initial CWD): d:\Code
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Reference 'Space' directory path: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Ensured reference 'Space' directory exists.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Initializing state variables...
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Initial internal CWD state set to Launch Directory: d:\Code
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - State variables initialized.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Loading initial state (Chat/CLI History, etc.)...
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Loading application state...
+2025-04-16 02:08:00 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:08:00 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - Default CWD set to initial directory: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - Loading state group...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - State group loaded.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CWD...
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Found saved directory in settings: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Saved directory is valid. Using: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Internal CWD state set to: d:\Code\PowerAgent\Space (OS chdir will be attempted later in __init__)
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - Processing saved conversation history...
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Loaded 0 conversation history items.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - conversation_history deque updated.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - Processing saved CLI history...
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Loaded 23 CLI history items.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_state     - MainThread - cli_command_history deque updated and index reset.
+2025-04-16 02:08:00 - INFO     - gui.main_window_state     - MainThread - Application state loading process finished.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - State loaded. Internal CWD is now: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Attempting to sync OS process CWD to internal state: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Successfully set OS process CWD to: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - CWD synchronization process finished.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Setting up basic window properties (title, geometry, icon)...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Setting main window icon...
+2025-04-16 02:08:00 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'poweragent' not found and fallback 'icon.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Main window icon set.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Basic window setup complete.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Setting up UI elements...
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Calling create_ui_elements...
+2025-04-16 02:08:00 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'edit-clear-history' not found and fallback 'clear_cli.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - create_ui_elements finished.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - UI elements created and assigned.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Restoring splitter state...
+2025-04-16 02:08:00 - DEBUG    - core.config               - MainThread - Attempting to get QSettings instance.
+2025-04-16 02:08:00 - INFO     - core.config               - MainThread - Using settings file: C:/Users/yeahhe/AppData/Roaming/YourOrgName/PowerAgent.ini
+2025-04-16 02:08:00 - WARNING  - gui.main_window           - MainThread - Invalid splitter state type found in settings: <class 'PySide6.QtCore.QByteArray'>. Setting defaults.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Setting default splitter sizes: CLI=467, Chat=383
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Applying theme-specific styles...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Applying styles for theme: 'system'
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Generating minimal QSS for system theme.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Applying generated QSS (Length: 1544).
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Styles applied successfully for theme 'system'.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Loading and applying display state (history, etc.)...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Applying loaded state to UI (History items: 0)...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Clearing chat display and internal history before applying loaded state...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Applied 0 loaded history items to display and internal deque.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Updating model selector based on loaded state...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Model selector UI text changed from '' to 'meta-llama/llama-4-maverick-17b-128e-instruct'.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt based on loaded state...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Finished applying loaded state to UI.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Installing event filters for focus switching...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Installed event filter on cli_input.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Installed event filter on chat_input.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Updating initial status indicator and model selector...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Updating model selector...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Current selected model in config: 'meta-llama/llama-4-maverick-17b-128e-instruct'
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Clearing model selector items.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Available models from config string: ['meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'deepseek-r1-distill-llama-70b', 'deepseek-r1-distill-qwen-32b', 'gemma2-9b-it']
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Adding 5 models to selector.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Attempting to restore selection 'meta-llama/llama-4-maverick-17b-128e-instruct'...
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Restored model selection to 'meta-llama/llama-4-maverick-17b-128e-instruct' (Index: 0).
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Re-enabling model selector signals.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Adding initial welcome message.
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='System', AddToHistory=False, Message='欢迎使用 PowerAgent！当前工作目录已设置为您的启动目录: 'd:\Code\PowerAgent\Space'。\n输入 '/help' 查看命令。'
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:08:00 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:00 - DEBUG    - gui.main_window           - MainThread - Updating initial CLI prompt...
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - Updating CLI prompt for directory: d:\Code\PowerAgent\Space
+2025-04-16 02:08:00 - DEBUG    - gui.main_window_updates   - MainThread - CLI prompt label updated to: 'PS D:\Code\PowerAgent\Space> '
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - Setting initial focus to chat input.
+2025-04-16 02:08:00 - INFO     - gui.main_window           - MainThread - --- MainWindow Initialization Finished (0.317s) ---
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - Showing MainWindow...
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - MainWindow shown successfully.
+2025-04-16 02:08:00 - INFO     - __main__                  - MainThread - Starting Qt application event loop...
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - Send/Stop button clicked.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - API worker running state: None
+2025-04-16 02:08:02 - INFO     - gui.main_window_handlers  - MainThread - Send/Stop button clicked: Triggering send message...
+2025-04-16 02:08:02 - INFO     - gui.main_window_handlers  - MainThread - Handling send message request...
+2025-04-16 02:08:02 - INFO     - gui.main_window_handlers  - MainThread - User prompt received (length 5): '打开浏览器'
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - Chat input cleared.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - Selected model: 'meta-llama/llama-4-maverick-17b-128e-instruct', Is placeholder: False, API Configured: True
+2025-04-16 02:08:02 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='User', AddToHistory=True, Message='打开浏览器'
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: User).
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:08:02 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - Prepared history for worker (length: 1).
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_handlers  - MainThread - CLI context inclusion enabled, but CLI output is empty.
+2025-04-16 02:08:02 - INFO     - gui.main_window_handlers  - MainThread - Starting ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct...
+2025-04-16 02:08:02 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=True, TaskType='api'
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=None, CurrentManual=None -> NextAPI=True, NextManual=False
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: False
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:08:02 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'process-stop' not found and fallback 'stop.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Set button to STOP state.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=True
+2025-04-16 02:08:02 - INFO     - gui.main_window_workers   - MainThread - Attempting to start ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread Parameters:
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread -   History Length: 1
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread -   Prompt Length: 5
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread -   CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:02 - INFO     - core.workers              - MainThread - Initializing ApiWorkerThread...
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread - ApiWorkerThread Init Params:
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   API Key Provided: True
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   Initial History Length: 1
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   Initial Prompt Length: 5
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   Initial CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   Keyboard Available: True
+2025-04-16 02:08:02 - DEBUG    - core.workers              - MainThread -   GUI Available: False
+2025-04-16 02:08:02 - INFO     - core.workers              - MainThread - ApiWorkerThread initialized.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread instance created.
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - Connecting signals for ApiWorkerThread...
+2025-04-16 02:08:02 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread signals connected.
+2025-04-16 02:08:02 - INFO     - gui.main_window_workers   - MainThread - ApiWorkerThread started successfully.
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() started.
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - GUI Automation not available. GUI controller will not be initialized.
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Multi-step mode enabled: True
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Running in iterative multi-step mode.
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Max iterations set to: 20
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - --- Multi-Step Iteration 1/20 Start ---
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Iteration 1: Sending API request...
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Preparing to send message to model...
+2025-04-16 02:08:02 - DEBUG    - core.workers              - Dummy-1    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:08:02 - DEBUG    - core.workers              - Dummy-1    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:08:02 - DEBUG    - core.workers              - Dummy-1    - Processing history (Size: 1) for API payload...
+2025-04-16 02:08:02 - DEBUG    - core.workers              - Dummy-1    - Added 1 messages from history.
+2025-04-16 02:08:02 - DEBUG    - core.workers              - Dummy-1    - Requests session configured with retry strategy.
+2025-04-16 02:08:02 - INFO     - core.workers              - Dummy-1    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 2, Approx Size: 1552 bytes)
+2025-04-16 02:08:02 - DEBUG    - urllib3.connectionpool    - Dummy-1    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:08:09 - DEBUG    - urllib3.connectionpool    - Dummy-1    - https://api-proxy.me:443 "POST /groq/v1/chat/completions HTTP/1.1" 200 None
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - API Response Status Code: 200
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - API Response JSON (Top Level Keys): ['id', 'object', 'created', 'model', 'choices', 'usage', 'usage_breakdown', 'system_fingerprint', 'x_groq']
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - API call successful. Finish reason: stop
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Requests session closed.
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Iteration 1: API call finished in 6.94s.
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Raw model reply: <gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Cleaning <think> tags...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Reply after <think>/<continue> cleaning: <gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Cleaning action tags for UI display...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Iteration 1: Text to emit to UI: <gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Emitting api_result signal (Time: 6.94s, Msg: <gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>...)
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Iteration 1: Emitted api_result to UI.
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Iteration 1: Parsing reply for actions...
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Iteration 1: No executable action tag found in reply.
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Iteration 1: No action found or executed. Breaking loop.
+2025-04-16 02:08:09 - INFO     - gui.main_window_workers   - MainThread - Handling API result (Elapsed: 6.94s). Reply preview: '<gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>...'
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - Multi-step iterative loop finished after 1 iteration(s).
+2025-04-16 02:08:09 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='Model', AddToHistory=True, Message='<gui_action>open "C:\Program Files\Google\Chrome\Application\chrome.exe"</gui_action>'
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() sequence finished (is_running=True).
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: Model).
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - No GuiController instance to delete.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:09 - DEBUG    - core.workers              - Dummy-1    - Emitting task_finished signal.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:09 - INFO     - core.workers              - Dummy-1    - ApiWorkerThread run() finished.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_updates   - MainThread - Inserting timestamp:  (耗时: 6.94 秒)
+2025-04-16 02:08:09 - INFO     - gui.main_window_workers   - MainThread - Api worker thread finished signal received.
+2025-04-16 02:08:09 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=False, TaskType='api'
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=False, CurrentManual=None -> NextAPI=False, NextManual=False
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: True
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Set button to SEND state (Enabled: True).
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=False
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Task 'api' finished, but another task is still running. Not setting focus.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - Clearing reference to finished ApiWorkerThread.
+2025-04-16 02:08:09 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:09 - DEBUG    - gui.main_window_workers   - MainThread - API result added to chat display.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - Send/Stop button clicked.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - API worker running state: None
+2025-04-16 02:08:18 - INFO     - gui.main_window_handlers  - MainThread - Send/Stop button clicked: Triggering send message...
+2025-04-16 02:08:18 - INFO     - gui.main_window_handlers  - MainThread - Handling send message request...
+2025-04-16 02:08:18 - INFO     - gui.main_window_handlers  - MainThread - User prompt received (length 4): '用命令行'
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - Chat input cleared.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - Selected model: 'meta-llama/llama-4-maverick-17b-128e-instruct', Is placeholder: False, API Configured: True
+2025-04-16 02:08:18 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='User', AddToHistory=True, Message='用命令行'
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: User).
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:08:18 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - Prepared history for worker (length: 3).
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_handlers  - MainThread - CLI context inclusion enabled, but CLI output is empty.
+2025-04-16 02:08:18 - INFO     - gui.main_window_handlers  - MainThread - Starting ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct...
+2025-04-16 02:08:18 - INFO     - gui.main_window_workers   - MainThread - Setting busy state: Busy=True, TaskType='api'
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Busy state calculation: CurrentAPI=None, CurrentManual=None -> NextAPI=True, NextManual=False
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Updating UI element enabled states...
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - ModelSelector enabled: False
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - CliInput enabled: True
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Updating Send/Stop button...
+2025-04-16 02:08:18 - WARNING  - gui.main_window_updates   - MainThread - Icon theme 'process-stop' not found and fallback 'stop.png' does not exist in d:\Code\PowerAgent\assets.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Set button to STOP state.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Updating status indicator to busy=True
+2025-04-16 02:08:18 - INFO     - gui.main_window_workers   - MainThread - Attempting to start ApiWorkerThread for model: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread Parameters:
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread -   History Length: 3
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread -   Prompt Length: 4
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread -   CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:18 - INFO     - core.workers              - MainThread - Initializing ApiWorkerThread...
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread - ApiWorkerThread Init Params:
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   API Key Provided: True
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   API URL: https://api-proxy.me/groq
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   Model ID: meta-llama/llama-4-maverick-17b-128e-instruct
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   Initial History Length: 3
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   Initial Prompt Length: 4
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   Initial CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   Keyboard Available: True
+2025-04-16 02:08:18 - DEBUG    - core.workers              - MainThread -   GUI Available: False
+2025-04-16 02:08:18 - INFO     - core.workers              - MainThread - ApiWorkerThread initialized.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread instance created.
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - Connecting signals for ApiWorkerThread...
+2025-04-16 02:08:18 - DEBUG    - gui.main_window_workers   - MainThread - ApiWorkerThread signals connected.
+2025-04-16 02:08:18 - INFO     - gui.main_window_workers   - MainThread - ApiWorkerThread started successfully.
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - ApiWorkerThread run() started.
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - GUI Automation not available. GUI controller will not be initialized.
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Multi-step mode enabled: True
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Running in iterative multi-step mode.
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Max iterations set to: 20
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - --- Multi-Step Iteration 1/20 Start ---
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Iteration 1: Sending API request...
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Preparing to send message to model...
+2025-04-16 02:08:18 - DEBUG    - core.workers              - Dummy-2    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:08:18 - DEBUG    - core.workers              - Dummy-2    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:08:18 - DEBUG    - core.workers              - Dummy-2    - Processing history (Size: 3) for API payload...
+2025-04-16 02:08:18 - DEBUG    - core.workers              - Dummy-2    - Added 3 messages from history.
+2025-04-16 02:08:18 - DEBUG    - core.workers              - Dummy-2    - Requests session configured with retry strategy.
+2025-04-16 02:08:18 - INFO     - core.workers              - Dummy-2    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 4, Approx Size: 1736 bytes)
+2025-04-16 02:08:18 - DEBUG    - urllib3.connectionpool    - Dummy-2    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:08:31 - DEBUG    - urllib3.connectionpool    - Dummy-2    - https://api-proxy.me:443 "POST /groq/v1/chat/completions HTTP/1.1" 200 None
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - API Response Status Code: 200
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - API Response JSON (Top Level Keys): ['id', 'object', 'created', 'model', 'choices', 'usage', 'usage_breakdown', 'system_fingerprint', 'x_groq']
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - API call successful. Finish reason: stop
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Requests session closed.
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: API call finished in 12.14s.
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Raw model reply: <cmd>start https://www.google.com</cmd>...
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Cleaning <think> tags...
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Reply after <think>/<continue> cleaning: <cmd>start https://www.google.com</cmd>...
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Cleaning action tags for UI display...
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Text to emit to UI: <cmd>start https://www.google.com</cmd>...
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Emitting api_result signal (Time: 12.14s, Msg: <cmd>start https://www.google.com</cmd>...)
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Emitted api_result to UI.
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Parsing reply for actions...
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Command action parsed: 'start https://www.google.com'
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Executing command: 'start https://www.google.com'...
+2025-04-16 02:08:31 - INFO     - gui.main_window_workers   - MainThread - Handling API result (Elapsed: 12.14s). Reply preview: '<cmd>start https://www.google.com</cmd>...'
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Emitting ai_command_echo signal: start https://www.google.com
+2025-04-16 02:08:31 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='Model', AddToHistory=True, Message='<cmd>start https://www.google.com</cmd>'
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Emitting cli_output_signal with 60 bytes.
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Appending message to internal history (Role: Model).
+2025-04-16 02:08:31 - INFO     - core.command_executor     - Dummy-2    - Executing command (AI): 'start https://www.google.com' in CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - Preparing command for OS: Windows
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - Using PowerShell with EncodedCommand.
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - PowerShell Script (Original): $ProgressPreference = 'SilentlyContinue'; try { start https://www.google.com } catch { Write-Error $_; exit 1 }...
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting remaining message text.
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting timestamp:  (耗时: 12.14 秒)
+2025-04-16 02:08:31 - INFO     - gui.main_window_updates   - MainThread - Adding chat message: Role='AI Command', AddToHistory=False, Message='start https://www.google.com'
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Skipping append to internal history (add_to_internal_history=False).
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting prefix...
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Parsing message content for actions/formatting...
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_updates   - MainThread - Inserting AI command echo text.
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - PowerShell Encoded Command (first 100 chars): JABQAHIAbwBnAHIAZQBzAHMAUAByAGUAZgBlAHIAZQBuAGMAZQAgAD0AIAAnAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1...
+2025-04-16 02:08:31 - INFO     - core.command_executor     - Dummy-2    - Executing Popen: ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', 'JABQAHIAbwBnAHIAZQBzAHMAUAByAGUAZgBlAHIAZQBuAGMAZQAgAD0AIAAnAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1AGUAJwA7ACAAdAByAHkAIAB7ACAAcwB0AGEAcgB0ACAAaAB0AHQAcABzADoALwAvAHcAdwB3AC4AZwBvAG8AZwBsAGUALgBjAG8AbQAgAH0AIABjAGEAdABjAGgAIAB7ACAAVwByAGkAdABlAC0ARQByAHIAbwByACAAJABfADsAIABlAHgAaQB0ACAAMQAgAH0A']
+2025-04-16 02:08:31 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:31 - INFO     - gui.main_window_updates   - MainThread - Finished adding chat message.
+2025-04-16 02:08:31 - DEBUG    - gui.main_window_workers   - MainThread - API result added to chat display.
+2025-04-16 02:08:31 - INFO     - core.command_executor     - Dummy-2    - Process started with PID: 11160
+2025-04-16 02:08:31 - INFO     - core.command_executor     - Dummy-2    - Process PID 11160 finished naturally. Exit code: 0
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - Reading final stdout/stderr for PID 11160...
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - Communicate successful. Stdout bytes: 0, Stderr bytes: 0
+2025-04-16 02:08:31 - DEBUG    - core.command_executor     - Dummy-2    - Final process wait completed for PID 11160. Exit code: 0.
+2025-04-16 02:08:31 - INFO     - core.command_executor     - Dummy-2    - Finished executing command logic for PID 11160 ('start https://www.google.com'). Final exit code: 0
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: Command finished. ExitCode: 0, New CWD: d:\Code\PowerAgent\Space
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Updating history before next iteration or finish.
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Adding AI reply (cleaned) to history.
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Adding action outcome to history: Command 'start https://www.google.com' executed. Success (Exit Code: 0)....
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Appending system message with action outcome to history.
+2025-04-16 02:08:31 - INFO     - core.workers              - Dummy-2    - Iteration 1: History updated. New size: 5
+2025-04-16 02:08:31 - DEBUG    - core.workers              - Dummy-2    - Iteration 1: Pausing briefly before next iteration.
+2025-04-16 02:08:32 - INFO     - core.workers              - Dummy-2    - --- Multi-Step Iteration 1/20 End ---
+2025-04-16 02:08:32 - INFO     - core.workers              - Dummy-2    - --- Multi-Step Iteration 2/20 Start ---
+2025-04-16 02:08:32 - INFO     - core.workers              - Dummy-2    - Iteration 2: Sending API request...
+2025-04-16 02:08:32 - INFO     - core.workers              - Dummy-2    - Preparing to send message to model...
+2025-04-16 02:08:32 - DEBUG    - core.workers              - Dummy-2    - Target API URL: https://api-proxy.me/groq/v1/chat/completions
+2025-04-16 02:08:32 - DEBUG    - core.workers              - Dummy-2    - System prompt constructed (Length: 1139). Multi-step flow: True
+2025-04-16 02:08:32 - DEBUG    - core.workers              - Dummy-2    - Processing history (Size: 5) for API payload...
+2025-04-16 02:08:32 - DEBUG    - core.workers              - Dummy-2    - Added 5 messages from history.
+2025-04-16 02:08:32 - DEBUG    - core.workers              - Dummy-2    - Requests session configured with retry strategy.
+2025-04-16 02:08:32 - INFO     - core.workers              - Dummy-2    - Sending API request to https://api-proxy.me/groq/v1/chat/completions (Model: meta-llama/llama-4-maverick-17b-128e-instruct, Msgs: 6, Approx Size: 1920 bytes)
+2025-04-16 02:08:32 - DEBUG    - urllib3.connectionpool    - Dummy-2    - Starting new HTTPS connection (1): api-proxy.me:443
+2025-04-16 02:08:36 - DEBUG    - urllib3.connectionpool    - Dummy-2    - https://api-proxy.me:443 "POST /groq/v1/chat/completions HTTP/1.1" 503 None
+2025-04-16 02:08:36 - DEBUG    - urllib3.util.retry        - Dummy-2    - Incremented Retry for (url='/groq/v1/chat/completions'): Retry(total=2, connect=None, read=None, redirect=None, status=None)
+2025-04-16 02:08:44 - INFO     - gui.main_window           - MainThread - Close event triggered.
+2025-04-16 02:08:44 - INFO     - gui.main_window           - MainThread - Initiating application shutdown sequence...
+2025-04-16 02:08:44 - INFO     - gui.main_window           - MainThread - Stopping API worker thread (if running)...
+2025-04-16 02:08:44 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop API worker thread...
+2025-04-16 02:08:44 - DEBUG    - gui.main_window_workers   - MainThread - API worker is running, calling stop().
+2025-04-16 02:08:44 - INFO     - core.workers              - MainThread - ApiWorkerThread stop() called. Setting internal flag.
+2025-04-16 02:08:44 - INFO     - gui.main_window_workers   - MainThread - API worker stop signal sent.
+2025-04-16 02:08:44 - INFO     - gui.main_window           - MainThread - Stopping Manual Command worker thread (if running)...
+2025-04-16 02:08:44 - INFO     - gui.main_window_workers   - MainThread - Attempting to stop Manual Command worker thread...
+2025-04-16 02:08:44 - INFO     - gui.main_window_workers   - MainThread - No active manual command worker thread found to stop.
+2025-04-16 02:08:44 - INFO     - gui.main_window           - MainThread - Waiting up to 500ms for 1 worker thread(s) to finish...
+2025-04-16 02:08:45 - WARNING  - gui.main_window           - MainThread - Worker thread(s) did not finish within timeout.
+2025-04-16 02:08:45 - INFO     - gui.main_window           - MainThread - Saving final application state before closing...
+2025-04-16 02:08:45 - INFO     - gui.main_window_state     - MainThread - Skipping save_state during close sequence.
+2025-04-16 02:08:45 - INFO     - gui.main_window           - MainThread - Accepting close event. Exiting application.
+2025-04-16 02:08:45 - INFO     - __main__                  - MainThread - Qt application event loop finished. Exit code: 0
+2025-04-16 02:08:45 - INFO     - __main__                  - MainThread - --- Exiting PowerAgent (Final Exit Code: 0) ---
+2025-04-16 02:08:45 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - Calling CoUninitialize()
+2025-04-16 02:08:45 - DEBUG    - comtypes._post_coinit.unknwn - MainThread - CoUninitialize() done.
