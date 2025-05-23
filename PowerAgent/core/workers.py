@@ -406,11 +406,44 @@ class ApiWorkerThread(QThread):
                 self._try_emit_ai_command_echo(command_to_run) # Echo command to chat
                 status_message = f"Model {self._cwd}> {command_to_run}"; self._try_emit_cli_output_bytes(status_message.encode('utf-8')) # Echo to CLI
                 try:
-                    new_cwd, exit_code = execute_command_streamed( command=command_to_run, cwd=self._cwd, stop_flag_func=lambda: not self._is_running, output_signal=self.cli_output_signal, error_signal=self.cli_error_signal, directory_changed_signal=self.directory_changed_signal, is_manual_command=False)
+                    original_cwd = self._cwd
+                    # Updated to receive four values
+                    new_cwd, exit_code, stdout_summary, stderr_summary = execute_command_streamed(
+                        command=command_to_run,
+                        cwd=self._cwd,
+                        stop_flag_func=lambda: not self._is_running,
+                        output_signal=self.cli_output_signal, # Still used for live streaming to GUI
+                        error_signal=self.cli_error_signal,   # Still used for live streaming to GUI
+                        directory_changed_signal=self.directory_changed_signal,
+                        is_manual_command=False
+                    )
                     self._cwd = new_cwd
-                    logger.info(f"Command execution finished. ExitCode: {exit_code}, New CWD: {self._cwd}")
+                    logger.info(f"Single-step command execution finished. ExitCode: {exit_code}, New CWD: {self._cwd}, STDOUT len: {len(stdout_summary)}, STDERR len: {len(stderr_summary)}")
+
+                    # Construct and emit outcome message for single step, similar to multi-step for consistency in logging/display if desired
+                    # This might be useful if we want to display the summary in the CLI output area after execution.
+                    outcome_parts = [f"Command: '{command_to_run}'", f"Exit Code: {exit_code if exit_code is not None else 'N/A'}"]
+                    if original_cwd != self._cwd:
+                        outcome_parts.append(f"CWD: '{self._cwd}'")
+                    
+                    # Emit STDOUT summary if present
+                    if stdout_summary:
+                        stdout_msg = f"\n--- STDOUT (Summary) ---\n{stdout_summary}\n--- END STDOUT ---"
+                        logger.debug(f"Emitting single-step STDOUT summary: {stdout_msg[:200]}...")
+                        self._try_emit_cli_output_bytes(stdout_msg.encode('utf-8'), is_stderr=False)
+                    
+                    # Emit STDERR summary if present
+                    if stderr_summary:
+                        stderr_msg = f"\n--- STDERR (Summary) ---\n{stderr_summary}\n--- END STDERR ---"
+                        logger.debug(f"Emitting single-step STDERR summary: {stderr_msg[:200]}...")
+                        self._try_emit_cli_output_bytes(stderr_msg.encode('utf-8'), is_stderr=True) # Emit to error signal
+
+                    # Note: _action_outcome_message is not typically used for history in single-step mode,
+                    # but we could set it if there's a desire to log it or use it elsewhere.
+                    # For now, direct emission of summaries to GUI is the primary goal here.
+
                 except Exception as exec_err:
-                    logger.error("Error during command execution.", exc_info=True)
+                    logger.error("Error during single-step command execution.", exc_info=True)
                     self._try_emit_cli_error(f"Command execution error: {exec_err}")
             elif keyboard_action_to_run:
                 logger.info(f"Executing keyboard action: {keyboard_action_to_run}...")
@@ -574,19 +607,42 @@ class ApiWorkerThread(QThread):
                 status_message = f"Model {self._cwd}> {command_to_run}"; self._try_emit_cli_output_bytes(status_message.encode('utf-8'))
                 try:
                     original_cwd = self._cwd
-                    new_cwd, exit_code = execute_command_streamed( command=command_to_run, cwd=self._cwd, stop_flag_func=lambda: not self._is_running, output_signal=self.cli_output_signal, error_signal=self.cli_error_signal, directory_changed_signal=self.directory_changed_signal, is_manual_command=False )
+                    # Updated to receive four values
+                    new_cwd, exit_code, stdout_summary, stderr_summary = execute_command_streamed(
+                        command=command_to_run,
+                        cwd=self._cwd,
+                        stop_flag_func=lambda: not self._is_running,
+                        output_signal=self.cli_output_signal,
+                        error_signal=self.cli_error_signal,
+                        directory_changed_signal=self.directory_changed_signal,
+                        is_manual_command=False
+                    )
                     self._cwd = new_cwd
-                    logger.info(f"Iteration {current_iteration}: Command finished. ExitCode: {exit_code}, New CWD: {self._cwd}")
-                    cmd_summary = f"'{command_to_run[:50]}{'...' if len(command_to_run)>50 else ''}'"
-                    outcome = f"Command {cmd_summary} executed."
-                    if exit_code == 0: outcome += f" Success (Exit Code: 0)."
-                    elif exit_code is None: outcome += f" Likely finished/handled (e.g., 'cd')."
-                    elif exit_code == -999: outcome += f" Stopped by user."; self._is_running = False # Ensure loop breaks
-                    else: outcome += f" Failed (Exit Code: {exit_code})."
-                    if original_cwd != self._cwd: outcome += f" CWD changed to '{self._cwd}'."
-                    self._action_outcome_message = outcome
+                    logger.info(f"Iteration {current_iteration}: Command finished. ExitCode: {exit_code}, New CWD: {self._cwd}, STDOUT len: {len(stdout_summary)}, STDERR len: {len(stderr_summary)}")
+
+                    outcome_parts = [f"Command: '{command_to_run}'"]
+                    outcome_parts.append(f"Exit Code: {exit_code if exit_code is not None else 'N/A (e.g., cd)'}")
+
+                    if original_cwd != self._cwd:
+                        outcome_parts.append(f"CWD: '{self._cwd}'")
+
+                    outcome_parts.append("STDOUT:\n---")
+                    outcome_parts.append(stdout_summary if stdout_summary else "[EMPTY]")
+                    outcome_parts.append("---")
+
+                    outcome_parts.append("STDERR:\n---")
+                    outcome_parts.append(stderr_summary if stderr_summary else "[EMPTY]")
+                    outcome_parts.append("---")
+
+                    self._action_outcome_message = "\n".join(outcome_parts)
+                    if exit_code == -999: # Stopped by user
+                        self._is_running = False # Ensure loop breaks
+                    
                     time.sleep(0.5 if self._is_running else 0)
-                except Exception as exec_err: logger.error(f"Iteration {current_iteration}: Error executing command.", exc_info=True); self._action_outcome_message = f"System Error: Failed command '{command_to_run[:50]}...': {exec_err}"; self._try_emit_cli_error(self._action_outcome_message)
+                except Exception as exec_err:
+                    logger.error(f"Iteration {current_iteration}: Error executing command or processing its outcome.", exc_info=True)
+                    self._action_outcome_message = f"System Error: Failed command '{command_to_run[:50]}...': {exec_err}"
+                    self._try_emit_cli_error(self._action_outcome_message)
                 if not self._is_running: break # Break if stopped by user
 
             elif keyboard_action_to_run:
@@ -820,16 +876,42 @@ class ApiWorkerThread(QThread):
         timestamp_info = f"Current date and time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. " if include_timestamp else ""
 
         # --- Construct System Prompt ---
-        # (System prompt content remains the same, no logging needed inside the string itself)
         base_instructions = (
             f"You are an AI assistant interacting with a user's computer ({os_name}). "
             f"{shell_info} Your goal is to fulfill user requests by executing actions. "
             f"Prioritize actions in this order: 1. `<cmd>` (Shell Command), 2. `<keyboard>` (Keyboard Simulation - Windows ONLY), 3. `<gui_action>` (GUI Control - Windows ONLY).\n"
             f"Current Working Directory (CWD): '{self._cwd}'\n"
             f"{timestamp_info}"
-            f"**ACTION RULES:**\n" # ... (rest of rules) ...
-            f"**UI 信息 (Windows ONLY, 可选):**\n" # ... (UI info explanation) ...
-            f"**General Instructions:**\n" # ... (general instructions) ...
+            f"**ACTION RULES:**\n"
+            f"- **`<cmd>your_command_here</cmd>`**: Executes a shell command. The command runs in the CWD. Output (stdout/stderr) will be returned to you.\n"
+            f"    **Important Guidelines for `<cmd>`:**\n"
+            f"    - **Quoting Paths:** If file or directory paths contain spaces, ensure they are enclosed in double quotes. Example: `<cmd>ls \"my documents/reports\"</cmd>`.\n"
+            f"    - **Preference for Non-Interactive Commands:** Generate commands that are non-interactive and do not require further user input unless explicitly requested by the user.\n"
+            f"    - **Common Command Examples:**\n"
+            f"        - Listing files: To list files, use `<cmd>ls</cmd>` (or `<cmd>dir</cmd>` on Windows). To list with details: `<cmd>ls -l</cmd>`.\n"
+            f"        - Directory creation: To create a directory: `<cmd>mkdir new_folder_name</cmd>`.\n"
+            f"        - Reading file contents (first few lines for brevity): To see the first few lines of a text file (e.g., `notes.txt`): `<cmd>head -n 5 notes.txt</cmd>` (Linux/macOS) or `<cmd>type notes.txt | select -first 5</cmd>` (Windows PowerShell).\n"
+            f"    - **`cd` Command Guidance:** To change the current working directory, use `<cmd>cd path/to/directory</cmd>`. You will be informed of the success and the new CWD, or failure. Do not assume CWD changes without confirmation.\n"
+            f"    - **Simplicity and Directness:** Commands should be direct and achieve a specific part of the user's request. If a task is complex, break it down into multiple, simpler commands in subsequent steps if multi-step mode is active.\n"
+            f"    - Example: `<cmd>ls -l</cmd>`.\n"
+            f"- **`<keyboard call=\"press|type|hotkey\" key=\"key_name\" text=\"text_to_type\" keys=\"ctrl+alt+del\" />`**: Simulates keyboard actions (Windows ONLY). Use 'press' for single key presses (e.g., 'enter', 'esc', 'a', 'b', '1', 'F1'). Use 'type' to send a string of characters. Use 'hotkey' for key combinations (e.g., 'ctrl+c', 'win+r'). Ensure `uiautomation` library is available. Key names are case-insensitive (e.g., 'enter', 'CTRL', 'Shift', 'ALT', 'WIN', 'F1'-'F12', 'a', 'b', '1', '2', 'space', 'backspace', 'delete', 'home', 'end', 'pageup', 'pagedown', 'up', 'left', etc.). Text for 'type' will be typed as is. For 'hotkey', combine keys with '+'.\n"
+            f"- **`<gui_action call=\"method_name\" args='{{\"key1\": \"value1\", ...}}' />`**: Performs a GUI action using `uiautomation` (Windows ONLY). `call` is the method name (e.g., `click_control`, `set_text`, `get_text`, `get_control_state`). `args` is a JSON string of arguments for the method, often including locators like `name`, `automation_id`, `control_type`. Example: `<gui_action call=\"click_control\" args='{{\"name\": \"Save Button\"}}' />`. Ensure `uiautomation` library is available and the target application is active.\n"
+            f"- **`<get_ui_info format=\"text|json\" max_depth=\"3\" />`**: (Windows ONLY) Retrieves UI element information from the currently active window. `format` can be 'text' (human-readable) or 'json'. `max_depth` (optional, default 3) controls how deep the UI tree is inspected. This action helps you understand the UI before attempting a `<gui_action>`. The result will be provided in a system message.\n"
+            f"- **`<continue />`**: (Multi-Step Mode ONLY) If a command or action is part of a sequence and you need to continue to the next step based on the outcome (which will be in history), use this tag. It tells the system to wait for your next instruction. Do not use this if the task is complete or if you need user input.\n"
+            f"- **Output/Results:** Command output, keyboard/GUI action success/failure, or UI info will be returned in a system message. Use this information to decide the next step or to formulate your final response.\n"
+            f"- **Error Handling:** If a command or action fails, the error message will be provided. Analyze it and try to correct your action or inform the user.\n"
+            f"- **Clarity:** Be explicit. Don't assume context beyond what's in the history or current CWD.\n"
+            f"- **No nested tags.** Only one action tag per response.\n"
+            f"- **Text Response:** If no action is needed, or if the task is complete, provide a direct textual response in Chinese without any action tags.\n"
+            f"**UI 信息 (Windows ONLY, 可选):**\n"
+            f"If the user provides UI information via a screenshot or describes a UI, it might be included below. Use this to inform `<gui_action>` calls if appropriate.\n"
+            f"**General Instructions:**\n"
+            f"- Think step-by-step. "
+            f"- If a request is complex, break it down. In multi-step mode, you can issue a sequence of actions. "
+            f"- Prefer simpler, more direct commands/actions. "
+            f"- If you need more information (e.g., a filename), ask the user. "
+            f"- Strive to be helpful and accurate. "
+            f"- Respond in Chinese when providing a textual answer to the user.\n"
         )
         flow_instructions = ""
         if is_multi_step_flow:

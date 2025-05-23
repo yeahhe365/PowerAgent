@@ -49,13 +49,15 @@ def execute_command_streamed( # Function name kept for compatibility
         is_manual_command: Passed to directory_changed_signal to indicate source.
 
     Returns:
-        tuple: (final_cwd, exit_code)
+        tuple: (final_cwd, exit_code, stdout_summary, stderr_summary)
     """
     command_source = "Manual" if is_manual_command else "AI"
     logger.info(f"Executing command ({command_source}): '{command[:100]}{'...' if len(command)>100 else ''}' in CWD: {cwd}")
 
     current_cwd = cwd
     exit_code = None
+    stdout_summary = ""
+    stderr_summary = ""
     process: subprocess.Popen | None = None
     process_pid = -1
 
@@ -123,16 +125,16 @@ def execute_command_streamed( # Function name kept for compatibility
             logger.error(f"Error processing 'cd' command: {e}", exc_info=True)
             _emit_error(f"Error processing 'cd' command: {e}")
         logger.debug("'cd' command handling finished.")
-        return current_cwd, None # Exit code is None for 'cd'
+        return current_cwd, None, stdout_summary, stderr_summary # Exit code is None for 'cd'
     # --- End 'cd' handling ---
 
     # --- Pre-Execution Checks ---
     if stop_flag_func():
         logger.warning("Execution skipped: Stop flag was set before start.")
-        return current_cwd, exit_code # Return current CWD, no exit code
+        return current_cwd, exit_code, stdout_summary, stderr_summary
     if not command:
         logger.info("Empty command received, nothing to execute.")
-        return current_cwd, exit_code
+        return current_cwd, exit_code, stdout_summary, stderr_summary
 
     # --- Execute other commands using Popen ---
     stdout_data = b""
@@ -156,7 +158,7 @@ def execute_command_streamed( # Function name kept for compatibility
                 logger.debug(f"PowerShell Encoded Command (first 100 chars): {encoded_ps_command[:100]}...")
             except Exception as encode_err:
                  logger.error(f"Error encoding command for PowerShell: {encode_err}", exc_info=True)
-                 _emit_error(f"Error encoding command for PowerShell: {encode_err}"); return current_cwd, None
+                 _emit_error(f"Error encoding command for PowerShell: {encode_err}"); return current_cwd, None, stdout_summary, stderr_summary
         else: # Linux / macOS
             shell_path = os.environ.get("SHELL", "/bin/sh")
             logger.debug(f"Using Shell: {shell_path}")
@@ -165,8 +167,8 @@ def execute_command_streamed( # Function name kept for compatibility
             except AttributeError: logger.warning("os.setsid not available on this platform."); preexec_fn = None
         # --- End argument preparation ---
 
-        if run_args is None: logger.error("Could not determine run arguments for subprocess."); return current_cwd, None
-        if stop_flag_func(): logger.warning("Execution skipped: Stop flag set before Popen."); return current_cwd, exit_code
+        if run_args is None: logger.error("Could not determine run arguments for subprocess."); return current_cwd, None, stdout_summary, stderr_summary
+        if stop_flag_func(): logger.warning("Execution skipped: Stop flag set before Popen."); return current_cwd, exit_code, stdout_summary, stderr_summary
 
         logger.info(f"Executing Popen: {run_args}")
         process = subprocess.Popen(
@@ -261,21 +263,36 @@ def execute_command_streamed( # Function name kept for compatibility
              logger.warning(f"Command PID {process_pid} exited with non-zero code: {exit_code}.")
              emitted_any_stderr = bool(stderr_data)
              # Decode stderr for checking if exit code message is already present
-             stderr_str_for_check = decode_output(stderr_data) if emitted_any_stderr else ""
+             # stderr_str_for_check = decode_output(stderr_data) if emitted_any_stderr else "" # decode_output is already called for stderr_summary
              # Avoid duplicate error messages
              exit_code_str = str(exit_code)
              # Check more robustly if the exit code is part of the error message (e.g., "exited with code 1")
-             if not emitted_any_stderr or (exit_code_str not in stderr_str_for_check and f"code {exit_code_str}" not in stderr_str_for_check.lower()):
+             if not emitted_any_stderr or (exit_code_str not in stderr_summary and f"code {exit_code_str}" not in stderr_summary.lower()):
                   exit_msg = f"Command exited with code: {exit_code}"
                   logger.info(f"Emitting explicit exit code error message for PID {process_pid}: {exit_msg}")
                   _emit_error(exit_msg)
              else:
                   logger.info(f"Non-zero exit code message for PID {process_pid} suppressed as stderr likely contained relevant info.")
 
+        # --- Summarize STDOUT ---
+        stdout_decoded = decode_output(stdout_data)
+        MAX_STDOUT_LEN = 2000 # Max characters for STDOUT summary
+        if len(stdout_decoded) > MAX_STDOUT_LEN:
+            half_len = MAX_STDOUT_LEN // 2
+            stdout_summary = f"{stdout_decoded[:half_len]}\n[... STDOUT TRUNCATED ...]\n{stdout_decoded[-half_len:]}"
+            logger.debug(f"STDOUT summary truncated to {len(stdout_summary)} chars.")
+        else:
+            stdout_summary = stdout_decoded
+            logger.debug(f"STDOUT summary (full): {len(stdout_summary)} chars.")
+
+        stderr_summary = decode_output(stderr_data)
+        logger.debug(f"STDERR summary (full): {len(stderr_summary)} chars.")
+
+
     except FileNotFoundError as fnf_err:
-        cmd_name = run_args[0] if run_args else "N/A"; fnf_msg = f"Command or execution shell not found: '{cmd_name}'. {fnf_err}"; logger.error(fnf_msg); _emit_error(fnf_msg); return current_cwd, None
+        cmd_name = run_args[0] if run_args else "N/A"; fnf_msg = f"Command or execution shell not found: '{cmd_name}'. {fnf_err}"; logger.error(fnf_msg); _emit_error(fnf_msg); return current_cwd, None, "", fnf_msg
     except PermissionError as pe:
-        perm_msg = f"Permission denied executing command: {pe}"; logger.error(perm_msg, exc_info=False); _emit_error(perm_msg); return current_cwd, None
+        perm_msg = f"Permission denied executing command: {pe}"; logger.error(perm_msg, exc_info=False); _emit_error(perm_msg); return current_cwd, None, "", perm_msg
     except Exception as exec_err:
         pid_info = f"PID {process_pid}" if process_pid != -1 else "PID N/A"
         logger.critical(f"Unhandled error during command execution ({pid_info}).", exc_info=True)
@@ -306,4 +323,4 @@ def execute_command_streamed( # Function name kept for compatibility
 
         logger.info(f"Finished executing command logic for PID {process_pid} ('{command[:50]}{'...' if len(command)>50 else ''}'). Final exit code: {exit_code}")
 
-    return current_cwd, exit_code
+    return current_cwd, exit_code, stdout_summary, stderr_summary
