@@ -11,9 +11,9 @@ from PySide6.QtWidgets import (
     QDialog, QLineEdit, QPushButton, QVBoxLayout, QFormLayout,
     QDialogButtonBox, QCheckBox, QLabel, QHBoxLayout,
     QComboBox, QSizePolicy, QSpacerItem, QGroupBox, QMessageBox,
-    QSpinBox
+    QSpinBox, QFileDialog
 )
-from PySide6.QtCore import QStandardPaths, QCoreApplication, Qt, QSize
+from PySide6.QtCore import QStandardPaths, QCoreApplication, Qt, QSize, QSettings
 from PySide6.QtGui import QIcon
 
 # Import constants needed for paths/names
@@ -175,6 +175,22 @@ class SettingsDialog(QDialog):
         self.reset_button.clicked.connect(self.handle_reset_settings)
         reset_layout = QHBoxLayout(); reset_layout.addWidget(self.reset_button); reset_layout.addStretch(1)
 
+        # --- Import/Export Buttons ---
+        self.import_button = QPushButton("导入设置")
+        self.import_button.setToolTip("从文件导入应用程序设置。")
+        self.import_button.clicked.connect(self.handle_import_settings) # Connect to the new method
+
+        self.export_button = QPushButton("导出设置")
+        self.export_button.setToolTip("将当前应用程序设置导出到文件。")
+        self.export_button.clicked.connect(self.handle_export_settings) # Connect to the new method
+
+        import_export_layout = QHBoxLayout()
+        import_export_layout.addStretch(1) # Push buttons to the right
+        import_export_layout.addWidget(self.import_button)
+        import_export_layout.addWidget(self.export_button)
+        import_export_layout.setSpacing(10)
+
+
         # --- Standard Buttons ---
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         button_box.button(QDialogButtonBox.StandardButton.Ok).setText("确定")
@@ -186,6 +202,7 @@ class SettingsDialog(QDialog):
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(api_groupbox)
         main_layout.addWidget(ui_groupbox)
+        main_layout.addLayout(import_export_layout) # Import/Export buttons
         main_layout.addLayout(reset_layout) # Reset button above error label
         main_layout.addWidget(self.error_label) # Error label at bottom before buttons
         # Removed the expanding spacer, let the groups take available space
@@ -345,3 +362,127 @@ class SettingsDialog(QDialog):
             self.auto_include_ui_checkbox.isChecked(), # Get state of the new checkbox
         )
         # <<< MODIFICATION END >>>
+
+    def handle_import_settings(self):
+        """Handles importing settings from a file."""
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        import_file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "导入设置",
+            default_dir,
+            "INI 文件 (*.ini);;所有文件 (*)"
+        )
+
+        if not import_file_path:
+            print("Import cancelled by user.")
+            return
+
+        try:
+            # Basic file validation by trying to read it with QSettings
+            imported_settings_test = QSettings(import_file_path, QSettings.Format.IniFormat)
+            if imported_settings_test.status() != QSettings.Status.NoError:
+                status_code = imported_settings_test.status()
+                del imported_settings_test # Release the file
+                error_msg = f"无法加载选择的设置文件 (代码: {status_code})。\n文件可能已损坏或格式不正确。"
+                if status_code == QSettings.Status.AccessError:
+                    error_msg = f"无法读取选择的设置文件: 权限错误。\n请检查路径: {import_file_path}"
+                QMessageBox.warning(self, "导入错误", error_msg)
+                print(f"Import failed: Invalid settings file or access error. Status: {status_code}")
+                return
+
+            del imported_settings_test # Release the file after successful status check
+
+            reply = QMessageBox.question(
+                self,
+                "确认导入",
+                f"您确定要从以下文件导入设置吗？\n\n{import_file_path}\n\n当前所有设置将被覆盖。此操作在点击“确定”保存前不会永久生效。",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+
+            if reply == QMessageBox.StandardButton.No:
+                print("Import confirmation declined by user.")
+                return
+
+            # Re-open for actual import
+            imported_settings = QSettings(import_file_path, QSettings.Format.IniFormat)
+            
+            main_app_settings = config.get_settings()
+            if main_app_settings is None:
+                QMessageBox.critical(self, "导入失败", "无法访问主应用程序设置以进行写入。")
+                print("Import failed: Could not get main application settings for writing.")
+                return
+
+            main_app_settings.clear() # Clear current settings
+
+            for key in imported_settings.allKeys():
+                main_app_settings.setValue(key, imported_settings.value(key))
+            
+            main_app_settings.sync() # Persist changes to the application's settings file
+
+            if main_app_settings.status() != QSettings.Status.NoError:
+                QMessageBox.warning(self, "导入问题", f"设置已部分导入，但在保存到应用程序时遇到问题 (代码: {main_app_settings.status()})。\n某些设置可能未正确应用。")
+                print(f"Problem persisting imported settings. QSettings status: {main_app_settings.status()}")
+            else:
+                QMessageBox.information(self, "导入成功", "设置已成功加载到对话框中。\n请检查这些设置，然后点击“确定”以应用并保存，或点击“取消”放弃更改。")
+                print("Settings successfully loaded into dialog from import file.")
+
+            # Refresh the application's global config variables from QSettings
+            config.load_config() 
+            # Update the UI fields in this dialog to reflect the newly imported settings
+            self.update_fields_from_config() 
+
+        except Exception as e:
+            QMessageBox.critical(self, "导入异常", f"导入设置时发生意外错误:\n{e}")
+            print(f"Exception during import: {e}")
+
+
+    def handle_export_settings(self):
+        """Handles exporting settings to a file."""
+        default_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        default_filename = f"{QCoreApplication.applicationName()}_settings.ini" # Suggest a filename
+        export_file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "导出设置",
+            os.path.join(default_dir, default_filename), # Suggest full path
+            "INI 文件 (*.ini);;所有文件 (*)"
+        )
+
+        if not export_file_path:
+            print("Export cancelled by user.")
+            return
+
+        try:
+            main_app_settings = config.get_settings() # Get main QSettings object
+            if main_app_settings is None:
+                QMessageBox.warning(self, "导出失败", "无法访问主应用程序设置。")
+                print("Export failed: Could not get main application settings.")
+                return
+
+            export_qsettings = QSettings(export_file_path, QSettings.Format.IniFormat)
+            export_qsettings.clear() # Clear any existing content in the target file
+
+            # Iterate through all keys (including those in groups) and copy them
+            for key in main_app_settings.allKeys():
+                export_qsettings.setValue(key, main_app_settings.value(key))
+            
+            export_qsettings.sync() # Ensure data is written to disk
+
+            if export_qsettings.status() == QSettings.Status.NoError:
+                QMessageBox.information(self, "导出成功", f"设置已成功导出到:\n{export_file_path}")
+                print(f"Settings successfully exported to {export_file_path}")
+            else:
+                error_string = f"导出设置时发生错误 (代码: {export_qsettings.status()})。"
+                # Attempt to get more specific error if possible, though QSettings might not provide much
+                # For example, if sync() fails due to permissions, status() might indicate WriteError.
+                if export_qsettings.status() == QSettings.Status.AccessError:
+                    error_string = f"导出设置失败: 无法写入文件 (权限错误)。\n请检查路径: {export_file_path}"
+                elif export_qsettings.status() == QSettings.Status.FormatError:
+                     error_string = f"导出设置失败: 格式错误。"
+
+                QMessageBox.warning(self, "导出失败", error_string)
+                print(f"Export failed. QSettings status: {export_qsettings.status()}")
+
+        except Exception as e:
+            QMessageBox.critical(self, "导出异常", f"导出设置时发生意外错误:\n{e}")
+            print(f"Exception during export: {e}")
