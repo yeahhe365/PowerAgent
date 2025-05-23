@@ -30,7 +30,7 @@ if platform.system() == "Windows":
         import uiautomation as auto
         try:
             logger.debug("Verifying 'uiautomation' basic functionality...")
-            auto.GetRootControl(wait_time=0.1)
+            auto.GetRootControl()
             UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = True # Keyboard depends only on import
             UIAUTOMATION_AVAILABLE_FOR_GUI = True      # GUI depends on import and basic function
             logger.info("'uiautomation' imported and verified successfully for keyboard/GUI.")
@@ -939,10 +939,48 @@ class ApiWorkerThread(QThread):
             if not isinstance(reply_text, str): reply_text = str(reply_text)
             return reply_text.strip()
 
-        except requests.exceptions.Timeout: logger.error(f"API request timed out after {timeout_seconds} seconds."); return f"错误: API 请求超时 ({timeout_seconds} 秒)。"
-        except requests.exceptions.SSLError as e: logger.error(f"API request SSL Error: {e}", exc_info=False); return f"错误: SSL 验证失败 ({e})。"
-        except requests.exceptions.RequestException as e: status_code = getattr(getattr(e, 'response', None), 'status_code', 'N/A'); logger.error(f"API request Network/Connection Error (Status: {status_code}): {e}", exc_info=False); return f"错误: API 请求失败 (网络/连接错误, 状态码: {status_code})"
-        except Exception as e: logger.critical("Unhandled Exception in _send_message_to_model", exc_info=True); return f"错误: API 调用期间发生意外错误 ({type(e).__name__})"
+        except requests.exceptions.Timeout:
+            logger.error(f"API request timed out after {timeout_seconds} seconds.")
+            return f"错误: AI 服务请求超时 ({timeout_seconds} 秒)。请检查您的网络连接或稍后再试。"
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"API request Connection Error: {e}", exc_info=False)
+            return "错误: 网络连接错误。请检查您的互联网连接并重试。"
+        except requests.exceptions.TooManyRedirects as e:
+            logger.error(f"API request Too Many Redirects: {e}", exc_info=False)
+            return "错误: API 请求因重定向过多而失败。请联系技术支持。"
+        except requests.exceptions.SSLError as e: # Specific SSL error
+            logger.error(f"API request SSL Error: {e}", exc_info=False)
+            return f"错误: SSL 验证失败。无法建立到 AI 服务的安全连接: {e}"
+        except requests.exceptions.RequestException as e: # General requests error
+            status_code_str = "N/A"
+            if e.response is not None:
+                status_code = e.response.status_code
+                status_code_str = str(status_code)
+                logger.error(f"API request failed with HTTP status {status_code}: {e}", exc_info=False)
+                if status_code == 500:
+                    return "错误: AI 服务遇到内部错误 (HTTP 500)。请稍后再试。"
+                elif status_code == 502:
+                    return "错误: AI 服务暂时不可用 (Bad Gateway - HTTP 502)。请稍后再试。"
+                elif status_code == 503:
+                    return "错误: AI 服务暂时过载或正在维护 (Service Unavailable - HTTP 503)。请稍后再试。"
+                elif status_code == 504:
+                    return "错误: AI 服务网关超时 (Gateway Timeout - HTTP 504)。请稍后再试。"
+                elif status_code == 400:
+                    return f"错误: API 请求无效 (Bad Request - HTTP 400)。详情: {e.response.text[:100]}"
+                elif status_code == 401:
+                    return "错误: API 密钥无效或未授权 (Unauthorized - HTTP 401)。请检查您的 API 密钥配置。"
+                elif status_code == 403:
+                    return "错误: API 访问被拒绝 (Forbidden - HTTP 403)。请检查您的 API 密钥权限。"
+                elif status_code == 429:
+                    return "错误: API 请求频率过高 (Too Many Requests - HTTP 429)。请稍后重试。"
+                else:
+                    return f"错误: API 请求失败 (HTTP {status_code_str})。详情: {e.response.text[:100]}"
+            else:
+                logger.error(f"API request failed (No response/other RequestException): {e}", exc_info=False)
+                return f"错误: API 请求失败 (网络/连接问题)。请检查您的网络连接或 API URL 配置。"
+        except Exception as e:
+            logger.critical("Unhandled Exception in _send_message_to_model", exc_info=True)
+            return f"错误: API 调用期间发生未处理的意外错误 ({type(e).__name__})。"
         finally:
             session.close() # Ensure session is closed
             logger.debug("Requests session closed.")
