@@ -21,7 +21,7 @@ from requests.adapters import HTTPAdapter
 logger = logging.getLogger(__name__)
 
 # --- uiautomation Import (Logging added) ---
-UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = False
+# UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = False # Removed
 UIAUTOMATION_AVAILABLE_FOR_GUI = False # Separate flag for GUI parts
 UIAUTOMATION_IMPORT_ERROR = ""
 if platform.system() == "Windows":
@@ -31,24 +31,24 @@ if platform.system() == "Windows":
         try:
             logger.debug("Verifying 'uiautomation' basic functionality...")
             auto.GetRootControl()
-            UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = True # Keyboard depends only on import
+            # UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = True # Removed
             UIAUTOMATION_AVAILABLE_FOR_GUI = True      # GUI depends on import and basic function
-            logger.info("'uiautomation' imported and verified successfully for keyboard/GUI.")
+            logger.info("'uiautomation' imported and verified successfully for GUI control.") # Updated log
         except Exception as verify_err:
-            UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = True # Import succeeded, keyboard might still work
+            # UIAUTOMATION_AVAILABLE_FOR_KEYBOARD = True # Removed
             UIAUTOMATION_AVAILABLE_FOR_GUI = False     # Basic function failed, GUI likely won't work
             UIAUTOMATION_IMPORT_ERROR = f"Failed to verify 'uiautomation' functionality: {verify_err}. GUI control likely disabled."
             logger.error(UIAUTOMATION_IMPORT_ERROR, exc_info=False) # Log as error, no need for full traceback here
     except ImportError:
-        UIAUTOMATION_IMPORT_ERROR = "Failed to import 'uiautomation'. Please install it (`pip install uiautomation`). Keyboard and GUI control disabled."
+        UIAUTOMATION_IMPORT_ERROR = "Failed to import 'uiautomation'. Please install it (`pip install uiautomation`). GUI control disabled." # Updated message
         logger.warning(UIAUTOMATION_IMPORT_ERROR)
         auto = None # type: ignore
     except Exception as import_err:
-        UIAUTOMATION_IMPORT_ERROR = f"An unexpected error occurred importing 'uiautomation': {import_err}. Keyboard and GUI control disabled."
+        UIAUTOMATION_IMPORT_ERROR = f"An unexpected error occurred importing 'uiautomation': {import_err}. GUI control disabled." # Updated message
         logger.error(UIAUTOMATION_IMPORT_ERROR, exc_info=True)
         auto = None # type: ignore
 else:
-    UIAUTOMATION_IMPORT_ERROR = "Keyboard and GUI Automation are only supported on Windows."
+    UIAUTOMATION_IMPORT_ERROR = "GUI Automation is only supported on Windows." # Updated message
     logger.info(UIAUTOMATION_IMPORT_ERROR)
     auto = None # type: ignore
 # --- End uiautomation Import ---
@@ -118,42 +118,7 @@ except ImportError:
     logger.warning("Failed to import Retry from urllib3.util.retry. Request retries disabled.")
     URLLIB3_RETRY_AVAILABLE = False
 
-# --- Key Mapping (Lowercase key names to auto.Keys constants) ---
-KEY_MAPPING = {}
-if UIAUTOMATION_AVAILABLE_FOR_KEYBOARD and auto: # Check keyboard flag
-    logger.debug("Mapping key names to uiautomation constants.")
-    KEY_MAPPING = {
-        'win': auto.Keys.VK_LWIN, 'windows': auto.Keys.VK_LWIN,
-        'ctrl': auto.Keys.VK_CONTROL, 'control': auto.Keys.VK_CONTROL,
-        'alt': auto.Keys.VK_MENU, 'menu': auto.Keys.VK_MENU,
-        'shift': auto.Keys.VK_SHIFT,
-        'enter': auto.Keys.VK_RETURN, 'return': auto.Keys.VK_RETURN,
-        'esc': auto.Keys.VK_ESCAPE, 'escape': auto.Keys.VK_ESCAPE,
-        'tab': auto.Keys.VK_TAB,
-        'space': auto.Keys.VK_SPACE, 'spacebar': auto.Keys.VK_SPACE,
-        'backspace': auto.Keys.VK_BACK,
-        'delete': auto.Keys.VK_DELETE, 'del': auto.Keys.VK_DELETE,
-        'insert': auto.Keys.VK_INSERT, 'ins': auto.Keys.VK_INSERT,
-        'home': auto.Keys.VK_HOME,
-        'end': auto.Keys.VK_END,
-        'pageup': auto.Keys.VK_PRIOR, 'pgup': auto.Keys.VK_PRIOR,
-        'pagedown': auto.Keys.VK_NEXT, 'pgdn': auto.Keys.VK_NEXT,
-        'up': auto.Keys.VK_UP, 'uparrow': auto.Keys.VK_UP,
-        'down': auto.Keys.VK_DOWN, 'downarrow': auto.Keys.VK_DOWN,
-        'left': auto.Keys.VK_LEFT, 'leftarrow': auto.Keys.VK_LEFT,
-        'right': auto.Keys.VK_RIGHT, 'rightarrow': auto.Keys.VK_RIGHT,
-        'f1': auto.Keys.VK_F1, 'f2': auto.Keys.VK_F2, 'f3': auto.Keys.VK_F3,
-        'f4': auto.Keys.VK_F4, 'f5': auto.Keys.VK_F5, 'f6': auto.Keys.VK_F6,
-        'f7': auto.Keys.VK_F7, 'f8': auto.Keys.VK_F8, 'f9': auto.Keys.VK_F9,
-        'f10': auto.Keys.VK_F10, 'f11': auto.Keys.VK_F11, 'f12': auto.Keys.VK_F12,
-        'capslock': auto.Keys.VK_CAPITAL,
-        'numlock': auto.Keys.VK_NUMLOCK,
-        'scrolllock': auto.Keys.VK_SCROLL,
-        'printscreen': auto.Keys.VK_SNAPSHOT, 'prtsc': auto.Keys.VK_SNAPSHOT,
-        # Add more mappings as needed
-    }
-else:
-     logger.debug("Keyboard automation not available, skipping key mapping.")
+# --- Key Mapping has been removed in a previous step ---
 
 # --- Worker Threads ---
 
@@ -178,7 +143,7 @@ class ApiWorkerThread(QThread):
         self._is_running = True
         self._gui_controller: Optional['GuiController'] = None
         self._action_outcome_message: str = ""
-        self._keyboard_available = UIAUTOMATION_AVAILABLE_FOR_KEYBOARD
+        # self._keyboard_available = UIAUTOMATION_AVAILABLE_FOR_KEYBOARD # Removed
         self._gui_available = UIAUTOMATION_AVAILABLE_FOR_GUI
 
         # Log initialization parameters (mask sensitive data)
@@ -191,7 +156,7 @@ class ApiWorkerThread(QThread):
         logger.debug("  Initial Prompt Length: %d", len(prompt) if prompt else 0)
         # logger.debug("  Initial Prompt: %s", prompt[:100] + "..." if prompt else "<empty>") # Be careful with prompt content
         logger.debug("  Initial CWD: %s", self._cwd)
-        logger.debug("  Keyboard Available: %s", self._keyboard_available)
+        # logger.debug("  Keyboard Available: %s", self._keyboard_available) # Removed
         logger.debug("  GUI Available: %s", self._gui_available)
         logger.info("ApiWorkerThread initialized.")
 
@@ -358,27 +323,21 @@ class ApiWorkerThread(QThread):
             # --- Parse and Execute Action ---
             if not self._is_running: logger.info("Stop signal set, skipping action parsing and execution."); return
 
-            command_to_run, keyboard_action_to_run, gui_action_to_run, get_ui_request = None, None, None, None
+            command_to_run, gui_action_to_run, get_ui_request = None, None, None # Removed keyboard_action_to_run
             action_parsed = False
             if reply_for_parsing and isinstance(reply_for_parsing, str) and "错误:" not in raw_model_reply:
                 logger.info("Parsing reply for actions...")
                 try:
                     # --- Action Parsing Logic (Same as before, just added logging) ---
                     command_match = re.search(r"<cmd>\s*(.*?)\s*</cmd>", reply_for_parsing, re.DOTALL | re.IGNORECASE)
-                    keyboard_match = re.search(r"""<keyboard\s+call=['"]([^'"]+)['"]\s+(?:key=['"]([^'"]+)['"]|text=['"](.*?)['"]|keys=['"]([^'"]+)['"])\s*/>""", reply_for_parsing, re.VERBOSE | re.DOTALL | re.IGNORECASE)
+                    # Removed keyboard_match
                     gui_match = re.search(r"""<gui_action\s+call=['"]([^'"]+)['"]\s+args=['"](.*?)['"]\s*/>""", reply_for_parsing, re.VERBOSE | re.DOTALL | re.IGNORECASE)
                     get_ui_info_match = re.search(r"<get_ui_info\s*(.*?)\s*/>", reply_for_parsing, re.IGNORECASE)
 
                     if command_match:
                         command_to_run = command_match.group(1).strip() or None
                         if command_to_run: logger.info(f"Command action parsed: '{command_to_run}'"); action_parsed = True
-                    elif keyboard_match:
-                        kb_call = keyboard_match.group(1).strip().lower(); kb_key = keyboard_match.group(2); kb_text = keyboard_match.group(3); kb_keys = keyboard_match.group(4)
-                        keyboard_action_to_run = {"call": kb_call}
-                        if kb_key is not None: keyboard_action_to_run["key"] = kb_key.strip()
-                        if kb_text is not None: keyboard_action_to_run["text"] = html.unescape(kb_text) # Unescape here
-                        if kb_keys is not None: keyboard_action_to_run["keys"] = kb_keys.strip()
-                        logger.info(f"Keyboard action parsed: {keyboard_action_to_run}"); action_parsed = True
+                    # Removed keyboard_match block
                     elif gui_match:
                         try:
                             gui_call, gui_args_json_html = gui_match.groups(); gui_args_json = html.unescape(gui_args_json_html.strip()); gui_args_dict = json.loads(gui_args_json)
@@ -447,12 +406,7 @@ class ApiWorkerThread(QThread):
                     logger.error("Error during single-step command execution.", exc_info=True)
                     self._try_emit_cli_error(f"Command execution error: {exec_err}")
                 if not self._is_running: return # Check after command execution
-            elif keyboard_action_to_run:
-                logger.info(f"Executing keyboard action: {keyboard_action_to_run}...")
-                success, outcome_msg = self._execute_keyboard_action(keyboard_action_to_run)
-                if not success: self._try_emit_cli_error(outcome_msg) # Report failure
-                logger.info(f"Keyboard action finished. Success: {success}, Message: {outcome_msg}")
-                if not self._is_running: return # Check after keyboard action
+            # Removed keyboard_action_to_run execution block
             elif gui_action_to_run:
                 logger.info(f"Executing GUI action: {gui_action_to_run['call']}...")
                 if self._gui_available and self._gui_controller:
@@ -564,7 +518,7 @@ class ApiWorkerThread(QThread):
             if not self._is_running: logger.warning(f"Iteration {current_iteration}: Stop signal set after processing reply."); break
 
             # --- Parse and Execute Action ---
-            command_to_run, keyboard_action_to_run, gui_action_to_run, get_ui_request = None, None, None, None
+            command_to_run, gui_action_to_run, get_ui_request = None, None, None # Removed keyboard_action_to_run
             exit_code = None # Store command exit code
 
             if reply_for_parsing and isinstance(reply_for_parsing, str) and "错误:" not in raw_model_reply:
@@ -572,20 +526,14 @@ class ApiWorkerThread(QThread):
                 try:
                     # --- Action Parsing Logic (Same as single step) ---
                     command_match = re.search(r"<cmd>\s*(.*?)\s*</cmd>", reply_for_parsing, re.DOTALL | re.IGNORECASE)
-                    keyboard_match = re.search(r"""<keyboard\s+call=['"]([^'"]+)['"]\s+(?:key=['"]([^'"]+)['"]|text=['"](.*?)['"]|keys=['"]([^'"]+)['"])\s*/>""", reply_for_parsing, re.VERBOSE | re.DOTALL | re.IGNORECASE)
+                    # Removed keyboard_match
                     gui_match = re.search(r"""<gui_action\s+call=['"]([^'"]+)['"]\s+args=['"](.*?)['"]\s*/>""", reply_for_parsing, re.VERBOSE | re.DOTALL | re.IGNORECASE)
                     get_ui_info_match = re.search(r"<get_ui_info\s*(.*?)\s*/>", reply_for_parsing, re.IGNORECASE)
 
                     if command_match:
                         command_to_run = command_match.group(1).strip() or None
                         if command_to_run: logger.info(f"Iteration {current_iteration}: Command action parsed: '{command_to_run}'"); action_found_this_iteration = True
-                    elif keyboard_match:
-                        kb_call = keyboard_match.group(1).strip().lower(); kb_key = keyboard_match.group(2); kb_text = keyboard_match.group(3); kb_keys = keyboard_match.group(4)
-                        keyboard_action_to_run = {"call": kb_call}
-                        if kb_key is not None: keyboard_action_to_run["key"] = kb_key.strip()
-                        if kb_text is not None: keyboard_action_to_run["text"] = html.unescape(kb_text)
-                        if kb_keys is not None: keyboard_action_to_run["keys"] = kb_keys.strip()
-                        logger.info(f"Iteration {current_iteration}: Keyboard action parsed: {keyboard_action_to_run}"); action_found_this_iteration = True
+                    # Removed keyboard_match block
                     elif gui_match:
                         try:
                             gui_call, gui_args_json_html = gui_match.groups(); gui_args_json = html.unescape(gui_args_json_html.strip()); gui_args_dict = json.loads(gui_args_json)
@@ -650,17 +598,7 @@ class ApiWorkerThread(QThread):
                     self._try_emit_cli_error(self._action_outcome_message)
                 if not self._is_running: break 
 
-            elif keyboard_action_to_run:
-                action_executed = True
-                logger.info(f"Iteration {current_iteration}: Executing keyboard action: {keyboard_action_to_run}...")
-                success, outcome_msg = self._execute_keyboard_action(keyboard_action_to_run)
-                self._action_outcome_message = outcome_msg
-                if not success: self._try_emit_cli_error(outcome_msg)
-                logger.info(f"Iteration {current_iteration}: Keyboard action finished. Success: {success}, Message: {outcome_msg}")
-                if not self._is_running: break # Check before sleep
-                time.sleep(0.5 if self._is_running else 0)
-                if not self._is_running: break # Check after sleep
-
+            # Removed keyboard_action_to_run execution block
             elif gui_action_to_run:
                 action_executed = True
                 logger.info(f"Iteration {current_iteration}: Executing GUI action: {gui_action_to_run['call']}...")
@@ -741,69 +679,6 @@ class ApiWorkerThread(QThread):
 
 
         logger.info(f"Multi-step iterative loop finished after {current_iteration} iteration(s).")
-
-    def _execute_keyboard_action(self, action: Dict[str, Any]) -> Tuple[bool, str]:
-        """Executes a keyboard action using uiautomation, with added checks and logging."""
-        call = action.get("call", "unknown")
-        logger.info(f"Attempting keyboard action: '{call}'")
-        logger.debug(f"Action details: {action}")
-
-        if not self._keyboard_available or not auto:
-            msg = "Keyboard action failed: uiautomation library not available or not on Windows."
-            logger.error(msg)
-            return False, msg
-
-        success = False
-        outcome_message = f"Keyboard action '{call}'"
-
-        try:
-            if call == "press":
-                key_name = action.get("key", "").lower(); outcome_message += f" (Key: {key_name})"
-                if not key_name: raise ValueError("Missing 'key' parameter for 'press'")
-                key_code = KEY_MAPPING.get(key_name)
-                if key_code is None: raise ValueError(f"Unknown key name: '{key_name}'")
-                logger.debug(f"Pressing key: {key_name} (Code: {key_code})")
-                auto.PressKey(key_code); time.sleep(0.05); auto.ReleaseKey(key_code); time.sleep(0.05) # Add delay after release too
-                success = True; outcome_message += " executed successfully."
-            elif call == "type":
-                text_to_type = action.get("text") # Get original text
-                outcome_message += f" (Text: {repr(text_to_type)[:30]}{'...' if len(repr(text_to_type))>30 else ''})"
-                if text_to_type is None: raise ValueError("Missing 'text' parameter for 'type'")
-                if not isinstance(text_to_type, str):
-                     logger.warning(f"Keyboard type action received non-string text '{repr(text_to_type)}' (Type: {type(text_to_type)}). Attempting conversion.")
-                     try: text_to_type = str(text_to_type)
-                     except Exception as str_conv_err: raise ValueError(f"Could not convert text parameter to string for 'type': {str_conv_err}") from str_conv_err
-                logger.debug(f"Typing text: '{text_to_type[:50]}...'")
-                auto.SendKeys(text_to_type, interval=0.01) # interval can be adjusted
-                success = True; outcome_message += " executed successfully."
-            elif call == "hotkey":
-                keys_str = action.get("keys", "").lower(); outcome_message += f" (Keys: {keys_str})"
-                if not keys_str: raise ValueError("Missing 'keys' parameter for 'hotkey'")
-                keys = [k.strip() for k in keys_str.split('+') if k.strip()];
-                if not keys: raise ValueError("No valid keys specified for hotkey")
-                logger.debug(f"Executing hotkey: {keys_str}")
-                modifiers_to_press = []; main_key_code = None
-                for key_name in keys:
-                    key_code = KEY_MAPPING.get(key_name)
-                    if key_code is None: raise ValueError(f"Unknown key name in hotkey: '{key_name}'")
-                    if key_name in ['ctrl', 'control', 'alt', 'menu', 'shift', 'win', 'windows']: modifiers_to_press.append(key_code)
-                    elif main_key_code is None: main_key_code = key_code
-                    else: raise ValueError(f"Hotkey can only have one non-modifier key. Found multiple: '{keys_str}'")
-                if main_key_code is None: raise ValueError(f"No non-modifier key found in hotkey: '{keys_str}'")
-                logger.debug(f"Pressing modifiers: {modifiers_to_press}, Main key: {main_key_code}")
-                for mod_code in modifiers_to_press: auto.PressKey(mod_code)
-                time.sleep(0.05); auto.PressKey(main_key_code); auto.ReleaseKey(main_key_code); time.sleep(0.05)
-                for mod_code in reversed(modifiers_to_press): auto.ReleaseKey(mod_code)
-                success = True; outcome_message += " executed successfully."
-            else:
-                raise ValueError(f"Unsupported keyboard action call: '{call}'")
-
-            time.sleep(0.2) # General pause after keyboard action
-
-        except ValueError as ve: logger.error(f"Invalid keyboard action {action}: {ve}"); outcome_message = f"Keyboard Error: {ve}"; success = False
-        except Exception as e: logger.error(f"Failed to execute keyboard action {action}", exc_info=True); outcome_message = f"Keyboard Error: {e}"; success = False
-
-        return success, outcome_message
 
     # --- Signal Emission Helpers (Added Logging) ---
     def _try_emit_api_result(self, message: str, elapsed_time: float):
@@ -892,7 +767,7 @@ class ApiWorkerThread(QThread):
         base_instructions = (
             f"You are an AI assistant interacting with a user's computer ({os_name}). "
             f"{shell_info} Your goal is to fulfill user requests by executing actions. "
-            f"Prioritize actions in this order: 1. `<cmd>` (Shell Command), 2. `<keyboard>` (Keyboard Simulation - Windows ONLY), 3. `<gui_action>` (GUI Control - Windows ONLY).\n"
+            f"Prioritize actions in this order: 1. `<cmd>` (Shell Command), 2. `<gui_action>` (GUI Control - Windows ONLY).\n"
             f"Current Working Directory (CWD): '{self._cwd}'\n"
             f"{timestamp_info}"
             f"**ACTION RULES:**\n"
@@ -907,11 +782,10 @@ class ApiWorkerThread(QThread):
             f"    - **`cd` Command Guidance:** To change the current working directory, use `<cmd>cd path/to/directory</cmd>`. You will be informed of the success and the new CWD, or failure. Do not assume CWD changes without confirmation.\n"
             f"    - **Simplicity and Directness:** Commands should be direct and achieve a specific part of the user's request. If a task is complex, break it down into multiple, simpler commands in subsequent steps if multi-step mode is active.\n"
             f"    - Example: `<cmd>ls -l</cmd>`.\n"
-            f"- **`<keyboard call=\"press|type|hotkey\" key=\"key_name\" text=\"text_to_type\" keys=\"ctrl+alt+del\" />`**: Simulates keyboard actions (Windows ONLY). Use 'press' for single key presses (e.g., 'enter', 'esc', 'a', 'b', '1', 'F1'). Use 'type' to send a string of characters. Use 'hotkey' for key combinations (e.g., 'ctrl+c', 'win+r'). Ensure `uiautomation` library is available. Key names are case-insensitive (e.g., 'enter', 'CTRL', 'Shift', 'ALT', 'WIN', 'F1'-'F12', 'a', 'b', '1', '2', 'space', 'backspace', 'delete', 'home', 'end', 'pageup', 'pagedown', 'up', 'left', etc.). Text for 'type' will be typed as is. For 'hotkey', combine keys with '+'.\n"
             f"- **`<gui_action call=\"method_name\" args='{{\"key1\": \"value1\", ...}}' />`**: Performs a GUI action using `uiautomation` (Windows ONLY). `call` is the method name (e.g., `click_control`, `set_text`, `get_text`, `get_control_state`). `args` is a JSON string of arguments for the method, often including locators like `name`, `automation_id`, `control_type`. Example: `<gui_action call=\"click_control\" args='{{\"name\": \"Save Button\"}}' />`. Ensure `uiautomation` library is available and the target application is active.\n"
             f"- **`<get_ui_info format=\"text|json\" max_depth=\"3\" />`**: (Windows ONLY) Retrieves UI element information from the currently active window. `format` can be 'text' (human-readable) or 'json'. `max_depth` (optional, default 3) controls how deep the UI tree is inspected. This action helps you understand the UI before attempting a `<gui_action>`. The result will be provided in a system message.\n"
             f"- **`<continue />`**: (Multi-Step Mode ONLY) If a command or action is part of a sequence and you need to continue to the next step based on the outcome (which will be in history), use this tag. It tells the system to wait for your next instruction. Do not use this if the task is complete or if you need user input.\n"
-            f"- **Output/Results:** Command output, keyboard/GUI action success/failure, or UI info will be returned in a system message. Use this information to decide the next step or to formulate your final response.\n"
+            f"- **Output/Results:** Command output, GUI action success/failure, or UI info will be returned in a system message. Use this information to decide the next step or to formulate your final response.\n" # Removed keyboard from here
             f"- **Error Handling:** If a command or action fails, the error message will be provided. Analyze it and try to correct your action or inform the user.\n"
             f"- **Clarity:** Be explicit. Don't assume context beyond what's in the history or current CWD.\n"
             f"- **No nested tags.** Only one action tag per response.\n"
@@ -933,17 +807,17 @@ class ApiWorkerThread(QThread):
 **Iterative Operation Mode:**
 - You are in a multi-step process. Your previous action's outcome (or UI info) is in the history (System message).
 - Max consecutive actions: {max_iterations}.
-- **Your Task:** Analyze history/outcome/UI info. Determine the **single next action** (`<cmd>`, `<keyboard>`, `<gui_action>`, or `<get_ui_info>`).
+- **Your Task:** Analyze history/outcome/UI info. Determine the **single next action** (`<cmd>`, `<gui_action>`, or `<get_ui_info>`).
 - If task complete, provide final **textual confirmation/summary** (in Chinese) with NO action tags.
 - If error occurred, try to correct or inform user.
 - **Remember:** Only provide the *next single step* or the *final textual response*.
-**请根据上一步操作的结果/UI信息决定下一步操作 (`<cmd>`, `<keyboard>`, `<gui_action>`, `<get_ui_info>`) 或提供最终的中文文本回复。**
+**请根据上一步操作的结果/UI信息决定下一步操作 (`<cmd>`, `<gui_action>`, `<get_ui_info>`) 或提供最终的中文文本回复。**
 """
         else:
              flow_instructions = """
 
 **Single Operation Mode:**
-- Analyze user request and potentially provided UI info. Provide the single best action (`<cmd>`, `<keyboard>`, `<gui_action>`, `<get_ui_info>`) OR a textual response.
+- Analyze user request and potentially provided UI info. Provide the single best action (`<cmd>`, `<gui_action>`, `<get_ui_info>`) OR a textual response.
 - No follow-up API call after action execution.
 """
         system_message = base_instructions + flow_instructions
