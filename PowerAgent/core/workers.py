@@ -325,9 +325,10 @@ class ApiWorkerThread(QThread):
                 logger.debug(f"Raw model reply (single-step): {raw_model_reply[:200]}...") # Log truncated reply
 
             # Check stop signal again after API call
-            if not self._is_running and raw_model_reply != "错误: API 调用已取消。":
+            if not self._is_running and raw_model_reply != "错误: API 调用已取消。": # Check if already cancelled by _send_message_to_model
                 logger.warning("Stop signal received after API call completed. Overriding reply.")
                 raw_model_reply = "错误: API 调用已取消。"
+            if not self._is_running: logger.info("Stop signal set after API call, before parsing."); return # Exit early
 
             reply_for_display, reply_for_parsing = raw_model_reply or "", raw_model_reply or ""
             try:
@@ -445,17 +446,19 @@ class ApiWorkerThread(QThread):
                 except Exception as exec_err:
                     logger.error("Error during single-step command execution.", exc_info=True)
                     self._try_emit_cli_error(f"Command execution error: {exec_err}")
+                if not self._is_running: return # Check after command execution
             elif keyboard_action_to_run:
                 logger.info(f"Executing keyboard action: {keyboard_action_to_run}...")
                 success, outcome_msg = self._execute_keyboard_action(keyboard_action_to_run)
                 if not success: self._try_emit_cli_error(outcome_msg) # Report failure
                 logger.info(f"Keyboard action finished. Success: {success}, Message: {outcome_msg}")
+                if not self._is_running: return # Check after keyboard action
             elif gui_action_to_run:
                 logger.info(f"Executing GUI action: {gui_action_to_run['call']}...")
                 if self._gui_available and self._gui_controller:
                     logger.debug("Waiting 1.0s before GUI action...")
                     time.sleep(1.0)
-                    if not self._is_running: logger.info("Aborted after delay, before GUI action execution."); return
+                    if not self._is_running: logger.info("Aborted after delay, before GUI action execution."); return # Check after sleep
                     if self._gui_controller and self._gui_controller.is_available(): # Re-check
                         try:
                             call_name = gui_action_to_run.get('call', 'Unknown'); args = gui_action_to_run.get('args', {}); timeout = args.get('wait_timeout', 5)
@@ -475,6 +478,7 @@ class ApiWorkerThread(QThread):
                         except Exception as gui_exec_err: logger.error(f"Error executing GUI action '{gui_action_to_run.get('call')}'", exc_info=True); self._try_emit_cli_error(f"GUI action execution error: {gui_exec_err}")
                     else: logger.error("Cannot execute GUI action: Controller became unavailable."); self._try_emit_cli_error("Cannot execute GUI action: Controller became unavailable.")
                 else: logger.error("Cannot execute GUI action: GUI Automation not available."); self._try_emit_cli_error("Cannot execute GUI action: GUI Automation not available.")
+                if not self._is_running: return # Check after GUI action
             elif get_ui_request:
                  # Get UI Info is typically only useful in multi-step, but handle it here too if requested
                  logger.info("Executing Get UI Info action (Single Step)...")
@@ -491,6 +495,7 @@ class ApiWorkerThread(QThread):
                      # Optionally emit this info to the user or just log it
                      self._try_emit_cli_output_bytes(f"--- UI Info Retrieved ---\n{ui_text_info}\n--- End UI Info ---".encode('utf-8'))
                  else: logger.warning("Get UI Info action returned no information.")
+                 if not self._is_running: return # Check after get_ui_info
             else:
                  logger.info("No action executed in this step.")
 
@@ -643,7 +648,7 @@ class ApiWorkerThread(QThread):
                     logger.error(f"Iteration {current_iteration}: Error executing command or processing its outcome.", exc_info=True)
                     self._action_outcome_message = f"System Error: Failed command '{command_to_run[:50]}...': {exec_err}"
                     self._try_emit_cli_error(self._action_outcome_message)
-                if not self._is_running: break # Break if stopped by user
+                if not self._is_running: break 
 
             elif keyboard_action_to_run:
                 action_executed = True
@@ -652,7 +657,9 @@ class ApiWorkerThread(QThread):
                 self._action_outcome_message = outcome_msg
                 if not success: self._try_emit_cli_error(outcome_msg)
                 logger.info(f"Iteration {current_iteration}: Keyboard action finished. Success: {success}, Message: {outcome_msg}")
+                if not self._is_running: break # Check before sleep
                 time.sleep(0.5 if self._is_running else 0)
+                if not self._is_running: break # Check after sleep
 
             elif gui_action_to_run:
                 action_executed = True
@@ -660,8 +667,9 @@ class ApiWorkerThread(QThread):
                 action_success, action_error_message, action_result_value = False, "", None
                 if self._gui_available and self._gui_controller:
                     logger.debug(f"Iteration {current_iteration}: Waiting 1.0s before GUI action...")
+                    if not self._is_running: break # Check before sleep
                     time.sleep(1.0)
-                    if not self._is_running: logger.info(f"Iteration {current_iteration}: Aborted after delay, before GUI action execution."); break
+                    if not self._is_running: logger.info(f"Iteration {current_iteration}: Aborted after delay, before GUI action execution."); break # Check after sleep
                     if self._gui_controller and self._gui_controller.is_available():
                         try:
                             call_name = gui_action_to_run.get('call', 'Unknown'); args = gui_action_to_run.get('args', {}); timeout = args.get('wait_timeout', 5)
@@ -683,7 +691,9 @@ class ApiWorkerThread(QThread):
                 else: outcome = f"GUI Action '{gui_call_summary}' on control matching {locators_summary} failed."; outcome += f" Reason: {action_error_message}" if action_error_message else ""
                 self._action_outcome_message = outcome
                 logger.info(f"Iteration {current_iteration}: GUI action finished. Success: {action_success}. Outcome: {outcome}")
+                if not self._is_running: break # Check before sleep
                 time.sleep(0.5 if self._is_running else 0)
+                if not self._is_running: break # Check after sleep
 
             elif get_ui_request:
                 action_executed = True
@@ -701,7 +711,9 @@ class ApiWorkerThread(QThread):
                     self._action_outcome_message = f"当前活动窗口 UI 信息 ({format_type}, 深度 {max_depth}):\n{info_to_store}"
                     logger.info(f"Iteration {current_iteration}: Get UI Info succeeded. Stored outcome length: {len(self._action_outcome_message)}")
                 else: self._action_outcome_message = "系统: 无法获取当前活动窗口的 UI 信息。"; logger.warning(f"Iteration {current_iteration}: Get UI Info failed.")
-                time.sleep(0.2)
+                if not self._is_running: break # Check before sleep
+                time.sleep(0.2) # No check after this very short sleep, loop condition will catch it
+                if not self._is_running: break 
 
             # --- Update History and Check Loop Conditions ---
             if not action_executed:
@@ -723,7 +735,8 @@ class ApiWorkerThread(QThread):
                 break
             # Small pause before next iteration
             logger.debug(f"Iteration {current_iteration}: Pausing briefly before next iteration.")
-            time.sleep(0.2)
+            # No specific stop check needed around this very short sleep, as the main loop condition will catch it.
+            time.sleep(0.2) 
             logger.info(f"--- Multi-Step Iteration {current_iteration}/{max_iterations} End ---")
 
 
@@ -1019,6 +1032,9 @@ class ApiWorkerThread(QThread):
                 logger.error(f"API request failed: {reply_text}")
 
             if not isinstance(reply_text, str): reply_text = str(reply_text)
+            if not self._is_running: # Check after all processing, before returning
+                logger.warning("Send message returning cancelled: Stop signal received during API response handling.")
+                return "错误: API 调用已取消。"
             return reply_text.strip()
 
         except requests.exceptions.Timeout:
