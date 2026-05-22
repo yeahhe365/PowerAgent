@@ -1,5 +1,9 @@
 # PowerAgent
 
+<p align="center">
+  <a href="./README.md">中文</a> | <a href="./README.en.md">English</a>
+</p>
+
 一个将 AI 聊天助手与本地命令行控制相结合的桌面应用程序。
 
 ![image](https://github.com/user-attachments/assets/451b6bde-ef95-4b63-b0ae-5c2127cf6f73)
@@ -66,4 +70,3 @@
 
 
 ---
-
